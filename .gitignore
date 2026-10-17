@@ -1,3 +1,4 @@
+claude.sh
 config.env
 *.secret.yaml
 *.key
