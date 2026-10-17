@@ -5,8 +5,11 @@ metadata:
   namespace: argocd
 spec:
   description: Cluster foundation (CNI, GitOps, gateway, storage)
-  sourceRepos: ['*']
+  sourceRepos:
+    - '*'
   destinations:
-    - {server: https://kubernetes.default.svc, namespace: '*'}
+    - server: https://kubernetes.default.svc
+      namespace: '*'
   clusterResourceWhitelist:
-    - {group: '*', kind: '*'}
+    - group: '*'
+      kind: '*'

@@ -6,8 +6,10 @@ kind: PersistentVolume
 metadata:
   name: jellyfin-media
 spec:
-  capacity: {storage: 800Gi}
-  accessModes: [ReadWriteOnce]
+  capacity:
+    storage: 800Gi
+  accessModes:
+    - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-data
   volumeMode: Filesystem
@@ -17,15 +19,20 @@ spec:
     required:
       nodeSelectorTerms:
         - matchExpressions:
-            - {key: homelab/storage, operator: In, values: [media]}
+            - key: homelab/storage
+              operator: In
+              values:
+                - media
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: jellyfin-config
 spec:
-  capacity: {storage: 10Gi}
-  accessModes: [ReadWriteOnce]
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-data
   volumeMode: Filesystem
@@ -35,4 +42,7 @@ spec:
     required:
       nodeSelectorTerms:
         - matchExpressions:
-            - {key: homelab/storage, operator: In, values: [media]}
+            - key: homelab/storage
+              operator: In
+              values:
+                - media

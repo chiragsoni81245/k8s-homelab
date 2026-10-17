@@ -3,20 +3,29 @@ kind: Application
 metadata:
   name: cert-manager
   namespace: argocd
-  annotations: {argocd.argoproj.io/sync-wave: "1"}
-  finalizers: [resources-finalizer.argocd.argoproj.io]
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: platform
-  destination: {server: https://kubernetes.default.svc, namespace: cert-manager}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
   sources:
     - repoURL: https://charts.jetstack.io
       chart: cert-manager
       targetRevision: v1.21.2   # pinned (supports Kubernetes 1.33-1.36)
       helm:
-        valueFiles: [$values/gitops/apps/platform/cert-manager/values.yaml]
+        valueFiles:
+          - $values/gitops/apps/platform/cert-manager/values.yaml
     - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
       targetRevision: main # homelab-revision
       ref: values
   syncPolicy:
-    automated: {prune: true, selfHeal: true}
-    syncOptions: [CreateNamespace=true, ServerSideApply=true]
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

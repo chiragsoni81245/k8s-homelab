@@ -25,6 +25,11 @@ IP is not published in public DNS. Avoid a wildcard `*.chiragsoni.org A` record:
 ## Adding an app with TLS
 Attach an `HTTPRoute` to the shared Gateway; the `https` listener already matches `*.chiragsoni.org`:
 ```yaml
-parentRefs: [{name: homelab, namespace: envoy-gateway-system}]
-hostnames: [myapp.chiragsoni.org]
+parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: homelab
+    namespace: envoy-gateway-system
+hostnames:
+  - myapp.chiragsoni.org
 ```

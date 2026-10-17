@@ -4,16 +4,25 @@ kind: Application
 metadata:
   name: cert-manager-issuers
   namespace: argocd
-  annotations: {argocd.argoproj.io/sync-wave: "2"}
-  finalizers: [resources-finalizer.argocd.argoproj.io]
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: platform
-  destination: {server: https://kubernetes.default.svc, namespace: cert-manager}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
   source:
     repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
     targetRevision: main # homelab-revision
     path: gitops/apps/platform/cert-manager-issuers
-    directory: {include: '{clusterissuers,certificate-wildcard}.yaml'}
+    directory:
+      include: '{clusterissuers,certificate-wildcard}.yaml'
   syncPolicy:
-    automated: {prune: true, selfHeal: true}
-    syncOptions: [ServerSideApply=true, SkipDryRunOnMissingResource=true]
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true

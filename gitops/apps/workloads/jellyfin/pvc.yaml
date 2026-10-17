@@ -4,7 +4,8 @@ metadata:
   name: jellyfin-media
   namespace: jellyfin
 spec:
-  accessModes: [ReadWriteOnce]
+  accessModes:
+    - ReadWriteOnce
   storageClassName: local-data
   volumeName: jellyfin-media
   resources:
@@ -17,7 +18,8 @@ metadata:
   name: jellyfin-config
   namespace: jellyfin
 spec:
-  accessModes: [ReadWriteOnce]
+  accessModes:
+    - ReadWriteOnce
   storageClassName: local-data
   volumeName: jellyfin-config
   resources:

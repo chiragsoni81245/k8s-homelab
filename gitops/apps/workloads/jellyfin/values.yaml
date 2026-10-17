@@ -31,11 +31,16 @@ persistence:
 
 jellyfin:
   env:
-    - {name: JELLYFIN_PublishedServerUrl, value: "https://jellyfin.chiragsoni.org"}
+    - name: JELLYFIN_PublishedServerUrl
+      value: https://jellyfin.chiragsoni.org
 
 resources:
-  requests: {cpu: 250m, memory: 512Mi}
-  limits: {memory: 3Gi}          # Asus has 8GB total; no CPU limit so transcodes can use the cores
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  # Asus has 8GB total; no CPU limit so transcodes can use the cores
+  limits:
+    memory: 3Gi
 
 # No nodeSelector needed: the claims are pinned to the Asus by the PVs' nodeAffinity.
 
@@ -44,6 +49,10 @@ resources:
 httpRoute:
   enabled: true
   parentRefs:
-    - {name: homelab, namespace: envoy-gateway-system}
+    # group/kind spelled out: the API server defaults them, which would show up as an Argo diff
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: homelab
+      namespace: envoy-gateway-system
   hostnames:
     - jellyfin.chiragsoni.org

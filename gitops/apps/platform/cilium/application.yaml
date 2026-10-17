@@ -3,24 +3,34 @@ kind: Application
 metadata:
   name: cilium
   namespace: argocd
-  annotations: {argocd.argoproj.io/sync-wave: "0"}
-  finalizers: [resources-finalizer.argocd.argoproj.io]
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: platform
-  destination: {server: https://kubernetes.default.svc, namespace: kube-system}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
   sources:
     - repoURL: https://helm.cilium.io
       chart: cilium
       targetRevision: 1.20.3   # pinned; setup.sh bootstrap reads this same value
       helm:
-        valueFiles: [$values/gitops/apps/platform/cilium/values.yaml]
+        valueFiles:
+          - $values/gitops/apps/platform/cilium/values.yaml
     - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
       targetRevision: main # homelab-revision
       ref: values
     - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
       targetRevision: main # homelab-revision
       path: gitops/apps/platform/cilium
-      directory: {include: '{lb-ippool,l2-announcement}.yaml'}
+      directory:
+        include: '{lb-ippool,l2-announcement}.yaml'
   syncPolicy:
-    automated: {prune: true, selfHeal: true}
-    syncOptions: [ServerSideApply=true, SkipDryRunOnMissingResource=true]
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true

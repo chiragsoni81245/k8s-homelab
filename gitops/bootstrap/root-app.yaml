@@ -5,10 +5,13 @@ kind: Application
 metadata:
   name: root
   namespace: argocd
-  finalizers: [resources-finalizer.argocd.argoproj.io]
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  destination: {server: https://kubernetes.default.svc, namespace: argocd}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
   source:
     repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
     targetRevision: main # homelab-revision
@@ -17,4 +20,6 @@ spec:
       recurse: true
       include: '**/application.yaml'
   syncPolicy:
-    automated: {prune: true, selfHeal: true}
+    automated:
+      prune: true
+      selfHeal: true

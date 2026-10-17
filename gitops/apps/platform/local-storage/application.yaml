@@ -5,15 +5,22 @@ kind: Application
 metadata:
   name: local-storage
   namespace: argocd
-  annotations: {argocd.argoproj.io/sync-wave: "1"}
-  finalizers: [resources-finalizer.argocd.argoproj.io]
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: platform
-  destination: {server: https://kubernetes.default.svc, namespace: kube-system}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
   source:
     repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
     targetRevision: main # homelab-revision
     path: gitops/apps/platform/local-storage
-    directory: {include: 'storageclass.yaml'}
+    directory:
+      include: storageclass.yaml
   syncPolicy:
-    automated: {prune: true, selfHeal: true}
+    automated:
+      prune: true
+      selfHeal: true

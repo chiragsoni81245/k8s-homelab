@@ -8,7 +8,10 @@ metadata:
   namespace: envoy-gateway-system
 spec:
   secretName: wildcard-chiragsoni-org
-  issuerRef: {name: letsencrypt-staging, kind: ClusterIssuer}
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer
   dnsNames:
     - "*.chiragsoni.org"
-  privateKey: {rotationPolicy: Always}
+  privateKey:
+    rotationPolicy: Always

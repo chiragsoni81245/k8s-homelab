@@ -16,14 +16,25 @@ A PV for a new app (copy `apps/workloads/jellyfin/pv.yaml`):
 ```yaml
 apiVersion: v1
 kind: PersistentVolume
-metadata: {name: transmission-downloads}
+metadata:
+  name: transmission-downloads
 spec:
-  capacity: {storage: 500Gi}                 # nominal, not enforced
-  accessModes: [ReadWriteOnce]
+  capacity:
+    storage: 500Gi                         # nominal, not enforced
+  accessModes:
+    - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-data
-  local: {path: /DATA/Downloads/Torrent}     # the folder must already exist
-  nodeAffinity: {required: {nodeSelectorTerms: [{matchExpressions: [{key: homelab/storage, operator: In, values: [media]}]}]}}
+  local:
+    path: /DATA/Downloads/Torrent          # the folder must already exist
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: homelab/storage
+              operator: In
+              values:
+                - media
 ```
 plus a PVC in the app's namespace with `volumeName: transmission-downloads`. The PV's `nodeAffinity` makes the scheduler
 put any pod using the claim onto the Asus automatically. `tests/unit/gitops.bats` enforces this pattern (class, Retain, pinned, under `/DATA/`, has a claim).
@@ -40,4 +51,4 @@ put any pod using the claim onto the Asus automatically. `tests/unit/gitops.bats
 - Old Docker configs under `/DATA/AppData/<app>` can be reused by pointing a PV at them; Jellyfin deliberately uses a new folder
   (`jellyfin-k8s`) so nothing gets migrated.
 
-Small disposable volumes: PVC with `storageClassName: local-path`. Pin to a node with `nodeSelector: {homelab/disk: ssd}` if needed.
+Small disposable volumes: PVC with `storageClassName: local-path`. To pin it to a node, set the pod `nodeSelector` key `homelab/disk` to `ssd` (block style, like all YAML in this repo).

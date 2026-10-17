@@ -9,12 +9,17 @@ spec:
   acme:
     server: https://acme-staging-v02.api.letsencrypt.org/directory
     email: chiragsoni81245@gmail.com
-    privateKeySecretRef: {name: letsencrypt-staging-account-key}
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
     solvers:
-      - selector: {dnsZones: [chiragsoni.org]}
+      - selector:
+          dnsZones:
+            - chiragsoni.org
         dns01:
           cloudflare:
-            apiTokenSecretRef: {name: cloudflare-api-token, key: api-token}
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -24,9 +29,14 @@ spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
     email: chiragsoni81245@gmail.com
-    privateKeySecretRef: {name: letsencrypt-prod-account-key}
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
     solvers:
-      - selector: {dnsZones: [chiragsoni.org]}
+      - selector:
+          dnsZones:
+            - chiragsoni.org
         dns01:
           cloudflare:
-            apiTokenSecretRef: {name: cloudflare-api-token, key: api-token}
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token

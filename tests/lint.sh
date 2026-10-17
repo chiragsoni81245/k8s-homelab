@@ -29,5 +29,11 @@ for f in sorted(glob.glob("gitops/**/*.yaml", recursive=True)):
 sys.exit(bad)
 PY
 
+echo "== YAML style (block style only; empty {} and [] are fine) =="
+if grep -rnE "^[^#]*[:-] *[\{\[]" gitops templates .github --include=*.yaml --include=*.yml \
+     | grep -vE "(\{\}|\[\])[[:space:]]*(#.*)?$|'\{|\$\{"; then
+  echo "Flow-style YAML found above: write it as block style."; fail=1
+fi
+
 [[ $fail == 0 ]] && echo "LINT OK" || echo "LINT FAILED"
 exit $fail

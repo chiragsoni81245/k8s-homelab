@@ -4,7 +4,8 @@ kind: EnvoyProxy
 metadata:
   name: homelab
   namespace: envoy-gateway-system
-  annotations: {argocd.argoproj.io/sync-wave: "1"}
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   provider:
     type: Kubernetes
@@ -18,7 +19,8 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:
   name: envoy
-  annotations: {argocd.argoproj.io/sync-wave: "1"}
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   controllerName: gateway.envoyproxy.io/gatewayclass-controller
   parametersRef:
@@ -32,7 +34,8 @@ kind: Gateway
 metadata:
   name: homelab
   namespace: envoy-gateway-system
-  annotations: {argocd.argoproj.io/sync-wave: "2"}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   gatewayClassName: envoy
   listeners:
@@ -40,7 +43,8 @@ spec:
       protocol: HTTP
       port: 80
       allowedRoutes:
-        namespaces: {from: All}
+        namespaces:
+          from: All
     - name: https
       protocol: HTTPS
       port: 443
@@ -48,6 +52,11 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - {kind: Secret, name: wildcard-chiragsoni-org}   # issued by cert-manager (cert-manager-issuers app)
+          # group/kind spelled out: the API server defaults them, which would show up as an Argo diff
+          # issued by cert-manager (cert-manager-issuers app)
+          - group: ''
+            kind: Secret
+            name: wildcard-chiragsoni-org
       allowedRoutes:
-        namespaces: {from: All}
+        namespaces:
+          from: All

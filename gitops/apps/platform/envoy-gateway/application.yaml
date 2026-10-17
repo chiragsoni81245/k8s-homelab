@@ -3,24 +3,35 @@ kind: Application
 metadata:
   name: envoy-gateway
   namespace: argocd
-  annotations: {argocd.argoproj.io/sync-wave: "2"}
-  finalizers: [resources-finalizer.argocd.argoproj.io]
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: platform
-  destination: {server: https://kubernetes.default.svc, namespace: envoy-gateway-system}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: envoy-gateway-system
   sources:
     - repoURL: docker.io/envoyproxy
       chart: gateway-helm
       targetRevision: v1.9.2   # pinned (supports Kubernetes 1.33-1.36; chart also installs the Gateway API CRDs)
       helm:
-        valueFiles: [$values/gitops/apps/platform/envoy-gateway/values.yaml]
+        valueFiles:
+          - $values/gitops/apps/platform/envoy-gateway/values.yaml
     - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
       targetRevision: main # homelab-revision
       ref: values
     - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
       targetRevision: main # homelab-revision
       path: gitops/apps/platform/envoy-gateway
-      directory: {include: 'gateway.yaml'}
+      directory:
+        include: gateway.yaml
   syncPolicy:
-    automated: {prune: true, selfHeal: true}
-    syncOptions: [CreateNamespace=true, ServerSideApply=true, SkipDryRunOnMissingResource=true]
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
