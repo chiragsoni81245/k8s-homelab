@@ -28,6 +28,15 @@ spec:
       # this app's own volumes + claims
       directory:
         include: '{pv,pvc}.yaml'
+  # The chart renders the HTTPRoute backendRefs without these fields; the API server fills in the defaults,
+  # which Argo would otherwise show as a permanent diff.
+  ignoreDifferences:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      jqPathExpressions:
+        - .spec.rules[].backendRefs[].group
+        - .spec.rules[].backendRefs[].kind
+        - .spec.rules[].backendRefs[].weight
   syncPolicy:
     automated:
       prune: true
@@ -35,3 +44,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
