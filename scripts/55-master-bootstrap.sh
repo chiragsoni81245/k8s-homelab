@@ -41,9 +41,17 @@ check_committed_values() {
   log "LB IP pool (from git): $(awk '/start:|stop:/ {printf "%s ", $2}' "$PLATFORM_DIR/cilium/lb-ippool.yaml")"
 }
 
+# True once Argo CD has an Application with this name: from then on GitOps owns it, and a helm upgrade
+# would fight Argo over field ownership (server-side apply conflicts).
+managed_by_argocd() { kubectl -n argocd get application "$1" >/dev/null 2>&1; }
+
 # helm_install RELEASE REPO_NAME REPO_URL CHART APP_DIR NAMESPACE
 helm_install() {
   local release="$1" repo_name="$2" repo_url="$3" chart="$4" app_dir="$5" namespace="$6" version
+  if managed_by_argocd "$release"; then
+    log "$release is managed by Argo CD - skipping helm (change it in git instead)."
+    return 0
+  fi
   version="$(app_chart_version "gitops/apps/platform/$app_dir")"
   [[ -n "$version" ]] || die "Cannot read the $release chart version from application.yaml"
   helm repo add "$repo_name" "$repo_url" >/dev/null 2>&1 || true
