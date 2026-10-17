@@ -1,0 +1,38 @@
+# Jellyfin's own volumes. `local` PVs need the folder to EXIST already (see values.yaml for the one-time mkdir).
+# Both are pinned to the node that has /DATA mounted (label set by scripts/35-data-mount.sh + 60-worker-join.sh).
+# Capacity is nominal (not enforced). Retain + local = deleting these objects never touches your files.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-media
+spec:
+  capacity: {storage: 800Gi}
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-data
+  volumeMode: Filesystem
+  local:
+    path: /DATA/Media
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - {key: homelab/storage, operator: In, values: [media]}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-config
+spec:
+  capacity: {storage: 10Gi}
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-data
+  volumeMode: Filesystem
+  local:
+    path: /DATA/AppData/jellyfin-k8s
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - {key: homelab/storage, operator: In, values: [media]}

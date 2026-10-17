@@ -54,11 +54,6 @@ assert ipaddress.ip_address(pool["start"]) <= ip <= ipaddress.ip_address(pool["s
 PY
 }
 
-@test "static PV is pinned to the media node and never pruned" {
-  grep -q 'homelab/storage' "$ROOT/gitops/apps/platform/local-storage/data-pv.yaml"
-  grep -q 'prune: false' "$ROOT/gitops/apps/platform/local-storage/application.yaml"
-}
-
 @test "versions.env defines every pinned host version" {
   for v in K8S_VERSION CONTAINERD_VERSION HELM_VERSION NETBIRD_VERSION; do
     [[ -n "${!v}" ]] || { echo "$v missing"; false; }
@@ -81,4 +76,52 @@ PY
   run "$ROOT/setup.sh" --role worker
   [ "$status" -ne 0 ]
   [[ "$output" == *"root"* ]]
+}
+
+# Every app that brings its own local volume must follow the same safe pattern.
+@test "every PV is a pinned, retained local-data volume with a matching claim" {
+  python3 - "$ROOT" <<'PY'
+import sys, glob, yaml
+root = sys.argv[1] + "/gitops/apps"
+pvs, pvcs = {}, []
+for f in glob.glob(root + "/**/*.yaml", recursive=True):
+    for d in yaml.safe_load_all(open(f)):
+        if not isinstance(d, dict): continue
+        if d.get("kind") == "PersistentVolume": pvs[d["metadata"]["name"]] = d
+        if d.get("kind") == "PersistentVolumeClaim": pvcs.append(d)
+assert pvs, "expected at least one PV"
+for name, pv in pvs.items():
+    sp = pv["spec"]
+    assert sp["storageClassName"] == "local-data", f"{name}: storage class"
+    assert sp["persistentVolumeReclaimPolicy"] == "Retain", f"{name}: must Retain"
+    assert sp["local"]["path"].startswith("/DATA/"), f"{name}: path must be under /DATA"
+    terms = sp["nodeAffinity"]["required"]["nodeSelectorTerms"]
+    assert "homelab/storage" in str(terms), f"{name}: not pinned to the media node"
+for pvc in pvcs:
+    vn = pvc["spec"].get("volumeName")
+    if vn:
+        assert vn in pvs, f"PVC {pvc['metadata']['name']} -> unknown PV {vn}"
+        assert pvc["spec"]["storageClassName"] == pvs[vn]["spec"]["storageClassName"], "class mismatch"
+used = {p["spec"].get("volumeName") for p in pvcs}
+assert set(pvs) <= used, f"PVs without a claim: {set(pvs) - used}"
+PY
+}
+
+@test "jellyfin uses claims that exist in its own namespace" {
+  python3 - "$ROOT" <<'PY'
+import sys, yaml
+root = sys.argv[1] + "/gitops/apps/workloads/jellyfin"
+vals = yaml.safe_load(open(root + "/values.yaml"))
+app  = yaml.safe_load(open(root + "/application.yaml"))
+ns   = app["spec"]["destination"]["namespace"]
+claims = {d["metadata"]["name"]: d for d in yaml.safe_load_all(open(root + "/pvc.yaml")) if d}
+for key in ("config", "media"):
+    name = vals["persistence"][key]["existingClaim"]
+    assert name in claims, f"{key}: claim {name} not defined in pvc.yaml"
+    assert claims[name]["metadata"]["namespace"] == ns, f"{key}: wrong namespace"
+PY
+}
+
+@test "no leftover generic shared data-pv anywhere" {
+  ! grep -rq 'data-pv' "$ROOT/gitops" "$ROOT/docs"
 }

@@ -2,39 +2,42 @@
 
 | StorageClass | Type | Where data lives | Use for |
 |---|---|---|---|
-| `local-data` | static PV `data-pv` (declared once in git) | Asus `/DATA` (existing partition, never formatted) | media / downloads |
-| `local-path` | dynamic (Rancher local-path-provisioner) | `/var/lib/local-path` on the node the pod lands on | small app config/DB volumes |
+| `local-data` | static local PVs, **declared by each app** | folders on the Asus `/DATA` partition (existing, never formatted) | media, downloads, app config you want to survive rebuilds |
+| `local-path` | dynamic (Rancher local-path-provisioner) | `/var/lib/local-path` on the node the pod lands on | small disposable volumes |
 
-## /DATA on the Asus
-`scripts/35-data-mount.sh` mounts the existing partition by UUID (`nofail`, read-write). The PV has `nodeAffinity`
-`homelab/storage=media`, so any pod claiming it is scheduled onto the Asus automatically.
-
+## Pattern: every app brings its own PV + PVC + pod
+There is no shared "data" volume. Each app declares exactly the folder(s) it needs:
+```
+/DATA/Media                    -> Jellyfin            (apps/workloads/jellyfin: pv.yaml + pvc.yaml)
+/DATA/AppData/jellyfin-k8s     -> Jellyfin config      (same files)
+/DATA/Downloads/Torrent        -> Transmission         (its own app, same pattern, when you add it)
+```
+A PV for a new app (copy `apps/workloads/jellyfin/pv.yaml`):
 ```yaml
 apiVersion: v1
-kind: PersistentVolumeClaim
-metadata: {name: data, namespace: media}
+kind: PersistentVolume
+metadata: {name: transmission-downloads}
 spec:
-  accessModes: [ReadWriteOnce]       # one node; several pods on that node may share it
+  capacity: {storage: 500Gi}                 # nominal, not enforced
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
   storageClassName: local-data
-  volumeName: data-pv
-  resources: {requests: {storage: 800Gi}}
+  local: {path: /DATA/Downloads/Torrent}     # the folder must already exist
+  nodeAffinity: {required: {nodeSelectorTerms: [{matchExpressions: [{key: homelab/storage, operator: In, values: [media]}]}]}}
 ```
-- Mount the **one** PVC at a single path (`/data` with `downloads/` and `media/`) in both Jellyfin and Transmission so hardlinks/instant moves work.
-- Run pods with `runAsUser/runAsGroup` = the owner of your files (`DATA_PUID/DATA_PGID` in `config.env`; the setup script asks, it does not guess from the top-level owner, which is often root). Avoid `fsGroup` (recursive chown of the library).
-- Folders with mode `drwxr-x--x` (e.g. `Media/Movies`, group `smbgroup`) are unreadable to "others": run as that owner, or add `supplementalGroups: [<smbgroup gid>]`.
-- Old per-app configs under `/DATA/AppData/<app>` (many are root-owned from Docker) can be mounted with `subPath: AppData/<app>` to reuse them, at the cost of HDD speed for databases.
-- The PV is `Retain` and `prune: false`; the cluster can be rebuilt without touching your files.
-- Keep Jellyfin's config/cache on the SSD: PVC with `local-path` + `nodeSelector: {homelab/disk: ssd}`.
+plus a PVC in the app's namespace with `volumeName: transmission-downloads`. The PV's `nodeAffinity` makes the scheduler
+put any pod using the claim onto the Asus automatically. `tests/unit/gitops.bats` enforces this pattern (class, Retain, pinned, under `/DATA/`, has a claim).
 
-## Example: Jellyfin + Transmission on the same volume
-Both pods mount the same PVC `data` at `/data` (same filesystem => hardlinks / instant moves from `Downloads/Torrent` to `Media`).
-```yaml
-# Jellyfin: library path /data/Media  (use readOnly: true on the mount only if you don't let Jellyfin write artwork/.nfo)
-volumeMounts: [{name: data, mountPath: /data}]
-securityContext: {runAsUser: <PUID>, runAsGroup: <PGID>, supplementalGroups: [<smbgroup gid>]}
-# Transmission: download dir /data/Downloads/Torrent  (paths are case-sensitive)
-volumeMounts: [{name: data, mountPath: /data}]
-# both:
-volumes: [{name: data, persistentVolumeClaim: {claimName: data}}]
-```
-Numeric IDs are what matter on disk - a reinstalled OS does not need a user named `chirag`, only pods running with the right numbers.
+- **Folders must exist first.** A `local` PV does not create its folder. If it's missing, the pod stays `ContainerCreating`
+  with a "path does not exist" event. Create it once (`sudo mkdir -p ...`, `chown` to the app's user).
+- **If `/DATA` is not mounted** the folders don't exist either, so pods fail to start instead of writing to the root disk.
+- **Run pods as the owner of the files**, with numeric `runAsUser/runAsGroup` (the setup script asks for `DATA_PUID/DATA_PGID`).
+  Avoid `fsGroup` (recursive chown of the library). Folders like `Media/Movies` are `drwxr-x--x chirag:smbgroup`: run as that
+  owner or add the group's number to `supplementalGroups`.
+- **Separate mounts = no hardlinks.** `Downloads/Torrent` and `Media` are different mounts inside pods, so moving a finished
+  download into `Media` is a copy, not an instant move. If you later add Sonarr/Radarr that want hardlinks, give those apps one
+  PV for the common parent (`/DATA`) instead.
+- Old Docker configs under `/DATA/AppData/<app>` can be reused by pointing a PV at them; Jellyfin deliberately uses a new folder
+  (`jellyfin-k8s`) so nothing gets migrated.
+
+Small disposable volumes: PVC with `storageClassName: local-path`. Pin to a node with `nodeSelector: {homelab/disk: ssd}` if needed.

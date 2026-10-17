@@ -1,0 +1,49 @@
+# Jellyfin on the Asus. Chart: https://github.com/jellyfin/jellyfin-helm
+#
+# Volumes (declared in pv.yaml / pvc.yaml next to this file, both on the /DATA partition):
+#   /media   <- /DATA/Media                    your libraries: add /media/Movies, /media/TV Shows ... in Jellyfin
+#   /config  <- /DATA/AppData/jellyfin-k8s     config + database (survives cluster rebuilds)
+#   /cache   emptyDir                          disposable
+# A NEW config folder is used, so the old Docker config in /DATA/AppData/jellyfin is never touched or migrated.
+#
+# ONE-TIME, on the Asus (local PVs need the folder to exist; the pod owns it as the user below):
+#   sudo mkdir -p /DATA/AppData/jellyfin-k8s && sudo chown 1000:1000 /DATA/AppData/jellyfin-k8s
+
+# Run as the owner of your files. CHECK THESE NUMBERS: `stat -c '%u:%g' /DATA/Media`.
+# Folders like Media/Movies are group smbgroup with mode drwxr-x--x - owner access is enough; for group-only
+# paths add the group's numeric id to supplementalGroups. Do NOT use fsGroup (recursive chown of the library).
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  supplementalGroups: []
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: jellyfin-config
+  media:
+    enabled: true
+    type: pvc
+    existingClaim: jellyfin-media
+    readOnly: false              # false lets Jellyfin save artwork/.nfo next to the media; true = never write
+  cache:
+    enabled: false               # emptyDir
+
+jellyfin:
+  env:
+    - {name: JELLYFIN_PublishedServerUrl, value: "http://jellyfin.homelab.chiragsoni.org"}
+
+resources:
+  requests: {cpu: 250m, memory: 512Mi}
+  limits: {memory: 3Gi}          # Asus has 8GB total; no CPU limit so transcodes can use the cores
+
+# No nodeSelector needed: the claims are pinned to the Asus by the PVs' nodeAffinity.
+
+# Reach it through Envoy Gateway on the LAN IP 192.168.0.200 (see docs/networking.md):
+#   add `192.168.0.200 jellyfin.homelab.chiragsoni.org` to /etc/hosts or your DNS, then open http://jellyfin.homelab.chiragsoni.org
+httpRoute:
+  enabled: true
+  parentRefs:
+    - {name: homelab, namespace: envoy-gateway-system}
+  hostnames:
+    - jellyfin.homelab.chiragsoni.org

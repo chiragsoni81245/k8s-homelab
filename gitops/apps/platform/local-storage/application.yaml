@@ -1,4 +1,5 @@
-# Static storage for the Asus's /DATA partition (path-only Application, no chart).
+# StorageClass for static local volumes. Each app declares its OWN PersistentVolume + claim
+# (see workloads/jellyfin for the pattern); nothing here points at a specific folder.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -13,6 +14,6 @@ spec:
     repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
     targetRevision: main # homelab-revision
     path: gitops/apps/platform/local-storage
-    directory: {include: '{storageclass,data-pv}.yaml'}
+    directory: {include: 'storageclass.yaml'}
   syncPolicy:
-    automated: {prune: false, selfHeal: true}   # never prune the PV that points at your media
+    automated: {prune: true, selfHeal: true}

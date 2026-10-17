@@ -1,7 +1,9 @@
+# Static local volumes on the Asus /DATA partition. Apps bring their own PV (path + node pin) and PVC.
+# WaitForFirstConsumer: binding waits for a pod, so the scheduler honours the PV's node affinity.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: local-data
-provisioner: kubernetes.io/no-provisioner   # static PVs only
+provisioner: kubernetes.io/no-provisioner   # never creates volumes; only binds PVs declared in git
 volumeBindingMode: WaitForFirstConsumer
 reclaimPolicy: Retain
