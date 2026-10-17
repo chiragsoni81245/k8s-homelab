@@ -23,6 +23,13 @@ else
   git clone --quiet --branch "$BRANCH" "$REPO" "$DIR"
 fi
 
+# The clone is created by root (via sudo); let the invoking user work in it too. git otherwise refuses
+# ("dubious ownership") when the owner differs from the user running it.
+git config --system --get-all safe.directory | grep -qxF "$DIR" || git config --system --add safe.directory "$DIR"
+if [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != root ]]; then
+  chown -R "$SUDO_USER":"$(id -gn "$SUDO_USER")" "$DIR"
+fi
+
 cd "$DIR"
 # stdin may be the curl pipe; prompts read /dev/tty themselves (lib/common.sh)
 exec ./setup.sh "$@"
