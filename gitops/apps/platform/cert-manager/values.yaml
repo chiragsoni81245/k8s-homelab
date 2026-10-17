@@ -1,0 +1,8 @@
+crds:
+  enabled: true            # install the CRDs with the chart (kept on uninstall)
+extraArgs:
+  # DNS-01 self-checks must ask public resolvers: your LAN/router DNS may answer differently (split DNS)
+  - --dns01-recursive-nameservers-only
+  - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53
+resources:
+  requests: {cpu: 20m, memory: 64Mi}

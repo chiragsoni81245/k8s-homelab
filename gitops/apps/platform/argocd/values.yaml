@@ -1,6 +1,6 @@
 # Trimmed for a 2-node homelab. TLS will be terminated at Envoy Gateway later, so serve plain HTTP.
 global:
-  domain: argocd.homelab.chiragsoni.org
+  domain: argocd.chiragsoni.org
 configs:
   params:
     server.insecure: true

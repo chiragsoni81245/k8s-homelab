@@ -51,7 +51,7 @@ cmd_status() {
   printf '%-14s %-14s %s\n' containerd "$CONTAINERD_VERSION" "$(installed_version containerd.io)"
   printf '%-14s %-14s %s\n' netbird "$NETBIRD_VERSION" "$(installed_version netbird)"
   printf '%-14s %-14s %s\n' helm "$HELM_VERSION" "$(helm version --template '{{.Version}}' 2>/dev/null || echo -)"
-  for a in cilium argocd envoy-gateway; do
+  for a in cilium argocd envoy-gateway cert-manager; do
     printf '%-14s %-14s %s\n' "$a (git)" "$(app_chart_version gitops/apps/platform/$a)" "see: kubectl -n argocd get app $a"
   done
   if [[ $ROLE == master ]]; then echo; kubectl get nodes -o wide 2>/dev/null || true; fi
@@ -67,6 +67,7 @@ cmd_check() {
   printf '%-22s %-14s %s\n' netbird "$NETBIRD_VERSION" "$(gh_latest netbirdio/netbird)"
   printf '%-22s %-14s %s\n' cilium "$(app_chart_version gitops/apps/platform/cilium)" "$(gh_latest cilium/cilium)"
   printf '%-22s %-14s %s\n' envoy-gateway "$(app_chart_version gitops/apps/platform/envoy-gateway)" "$(gh_latest envoyproxy/gateway)"
+  printf '%-22s %-14s %s\n' cert-manager "$(app_chart_version gitops/apps/platform/cert-manager)" "$(gh_latest cert-manager/cert-manager)"
   printf '%-22s %-14s %s\n' local-path-prov "$(grep -m1 'targetRevision: v' "$ROOT/gitops/apps/platform/local-path-provisioner/application.yaml" | awk '{print $2}')" "$(gh_latest rancher/local-path-provisioner)"
   printf '%-22s %-14s %s\n' "argo-cd chart" "$(app_chart_version gitops/apps/platform/argocd)" \
     "$(curl -fsS --max-time 20 https://argoproj.github.io/argo-helm/index.yaml | awk '/^  argo-cd:/{f=1} f&&/^    version:/&&!d{print $2; d=1}')"

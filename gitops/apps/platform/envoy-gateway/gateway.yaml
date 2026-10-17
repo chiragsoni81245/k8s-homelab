@@ -41,3 +41,13 @@ spec:
       port: 80
       allowedRoutes:
         namespaces: {from: All}
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.chiragsoni.org"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - {kind: Secret, name: wildcard-chiragsoni-org}   # issued by cert-manager (cert-manager-issuers app)
+      allowedRoutes:
+        namespaces: {from: All}

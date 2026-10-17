@@ -31,7 +31,7 @@ persistence:
 
 jellyfin:
   env:
-    - {name: JELLYFIN_PublishedServerUrl, value: "http://jellyfin.homelab.chiragsoni.org"}
+    - {name: JELLYFIN_PublishedServerUrl, value: "https://jellyfin.chiragsoni.org"}
 
 resources:
   requests: {cpu: 250m, memory: 512Mi}
@@ -40,10 +40,10 @@ resources:
 # No nodeSelector needed: the claims are pinned to the Asus by the PVs' nodeAffinity.
 
 # Reach it through Envoy Gateway on the LAN IP 192.168.0.200 (see docs/networking.md):
-#   add `192.168.0.200 jellyfin.homelab.chiragsoni.org` to /etc/hosts or your DNS, then open http://jellyfin.homelab.chiragsoni.org
+#   point jellyfin.chiragsoni.org at 192.168.0.200 (DNS record or /etc/hosts), then open https://jellyfin.chiragsoni.org
 httpRoute:
   enabled: true
   parentRefs:
     - {name: homelab, namespace: envoy-gateway-system}
   hostnames:
-    - jellyfin.homelab.chiragsoni.org
+    - jellyfin.chiragsoni.org

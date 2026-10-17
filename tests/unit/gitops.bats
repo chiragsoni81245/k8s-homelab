@@ -125,3 +125,33 @@ PY
 @test "no leftover generic shared data-pv anywhere" {
   ! grep -rq 'data-pv' "$ROOT/gitops" "$ROOT/docs"
 }
+
+@test "TLS chain is consistent: issuer -> certificate -> gateway listener" {
+  python3 - "$ROOT" <<'PY'
+import sys, yaml
+root = sys.argv[1] + "/gitops/apps/platform"
+issuers = {d["metadata"]["name"]: d for d in yaml.safe_load_all(open(root + "/cert-manager-issuers/clusterissuers.yaml")) if d}
+cert = yaml.safe_load(open(root + "/cert-manager-issuers/certificate-wildcard.yaml"))
+gw = [d for d in yaml.safe_load_all(open(root + "/envoy-gateway/gateway.yaml")) if d and d["kind"] == "Gateway"][0]
+assert {"letsencrypt-staging", "letsencrypt-prod"} <= set(issuers), "missing issuer"
+for name, i in issuers.items():
+    ref = i["spec"]["acme"]["solvers"][0]["dns01"]["cloudflare"]["apiTokenSecretRef"]
+    assert ref == {"name": "cloudflare-api-token", "key": "api-token"}, f"{name}: token secret ref"
+assert cert["spec"]["issuerRef"]["name"] in issuers, "certificate uses unknown issuer"
+https = [l for l in gw["spec"]["listeners"] if l["protocol"] == "HTTPS"][0]
+assert https["tls"]["certificateRefs"][0]["name"] == cert["spec"]["secretName"], "gateway secret != certificate secret"
+assert cert["metadata"]["namespace"] == gw["metadata"]["namespace"], "certificate must live with the gateway"
+assert https["hostname"] in cert["spec"]["dnsNames"], "listener hostname not covered by the certificate"
+PY
+}
+
+@test "app hostnames are covered by the wildcard certificate (one level only)" {
+  python3 - "$ROOT" <<'PY'
+import sys, yaml, glob
+root = sys.argv[1] + "/gitops/apps"
+for f in glob.glob(root + "/workloads/*/values.yaml"):
+    v = yaml.safe_load(open(f))
+    for h in (v.get("httpRoute") or {}).get("hostnames", []):
+        assert h.endswith(".chiragsoni.org") and h.count(".") == 2, f"{f}: {h} not matched by *.chiragsoni.org"
+PY
+}
