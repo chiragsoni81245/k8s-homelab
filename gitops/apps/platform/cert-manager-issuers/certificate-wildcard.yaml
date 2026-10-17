@@ -1,6 +1,5 @@
 # One wildcard certificate for every app: *.chiragsoni.org (one level: jellyfin.chiragsoni.org, not a.b.chiragsoni.org).
-# Lives next to the Gateway that serves it. Starts on STAGING: once `kubectl -n envoy-gateway-system get certificate`
-# shows READY=True, change issuerRef.name to letsencrypt-prod, commit, push (see docs/tls.md).
+# Lives next to the Gateway that serves it. Staging was proven first; this now uses the trusted production issuer.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -9,7 +8,7 @@ metadata:
 spec:
   secretName: wildcard-chiragsoni-org
   issuerRef:
-    name: letsencrypt-staging
+    name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
     - "*.chiragsoni.org"

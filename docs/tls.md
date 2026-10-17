@@ -13,7 +13,7 @@ Your apps never need to be reachable from the internet.
 2. On the master: `sudo tools/create-cloudflare-secret.sh` (paste the token; input is hidden, nothing is written to disk or git).
 3. Watch it issue: `kubectl -n envoy-gateway-system get certificate` -> `READY True` (first time takes ~1-3 minutes).
    If not: `kubectl -n cert-manager get challenges,orders` and `kubectl -n envoy-gateway-system describe certificate wildcard-chiragsoni-org`.
-4. It starts on the **staging** issuer (browsers will not trust it). When it is READY, edit
+4. It started on the **staging** issuer (browsers do not trust it); it now points at production. To go back to staging, edit
    `gitops/apps/platform/cert-manager-issuers/certificate-wildcard.yaml`: `issuerRef.name: letsencrypt-prod`, commit, push.
    Argo re-issues a trusted certificate. Renewal is automatic (~30 days before expiry).
 
