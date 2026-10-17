@@ -82,13 +82,19 @@ apps_status() {  # lines like "cilium=Synced/Healthy"
     -o jsonpath='{range .items[*]}{.metadata.name}={.status.sync.status}/{.status.health.status}{"\n"}{end}' 2>/dev/null || true
 }
 
+# Waits for every Argo app to be Synced/Healthy, printing progress. Never fatal: Argo keeps syncing in the
+# background either way. ARGO_WAIT_TIMEOUT seconds (default 600); 0 = don't wait.
 wait_for_apps() {
-  log "Waiting up to 15 min for Argo apps to sync..."
-  local deadline=$((SECONDS + 900)) status
+  local timeout="${ARGO_WAIT_TIMEOUT:-600}" deadline status not_ready
+  if (( timeout == 0 )); then log "Not waiting for Argo apps (ARGO_WAIT_TIMEOUT=0). Watch: kubectl -n argocd get applications"; return 0; fi
+  log "Waiting up to $((timeout/60)) min for Argo apps to sync (Ctrl-C is safe: Argo continues on its own)..."
+  deadline=$((SECONDS + timeout))
   while (( SECONDS < deadline )); do
     status="$(apps_status)"
-    [[ -n "$status" ]] && ! grep -qv '=Synced/Healthy$' <<<"$status" && break
-    sleep 15
+    not_ready="$(grep -v '=Synced/Healthy$' <<<"$status" || true)"
+    if [[ -n "$status" && -z "$not_ready" ]]; then log "All Argo apps are Synced/Healthy."; break; fi
+    log "Still syncing: $(tr '\n' ' ' <<<"${not_ready:-<no apps yet>}")"
+    sleep 20
   done
   kubectl -n argocd get applications || true
 }
