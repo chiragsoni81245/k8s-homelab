@@ -43,7 +43,7 @@ run_kubeadm_join() {
   shred -u /etc/kubernetes/kubeadm-join.yaml 2>/dev/null || rm -f /etc/kubernetes/kubeadm-join.yaml   # contains the token
   unset JOIN_TOKEN
   log "Joined with labels: $NODE_LABELS"
-  log "On the master, re-run 'sudo ./setup.sh' to add the node-role.kubernetes.io/worker label."
+  log "On the master run 'sudo tools/label-nodes.sh' to show this node's ROLE (kubelets cannot set node-role labels)."
 }
 
 if [[ -f /etc/kubernetes/kubelet.conf ]]; then
