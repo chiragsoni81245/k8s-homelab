@@ -130,3 +130,14 @@ YAML
 @test "retry gives up after N attempts" {
   ! retry 2 0 false
 }
+
+# ---- wireless toggle ----
+@test "wireless_should_be_disabled honours yes/no" {
+  DISABLE_WIRELESS=yes; wireless_should_be_disabled
+  DISABLE_WIRELESS=no;  ! wireless_should_be_disabled
+}
+@test "wireless_should_be_disabled in auto mode follows the hardware" {
+  DISABLE_WIRELESS=auto
+  has_wireless_hardware() { return 1; }; ! wireless_should_be_disabled
+  has_wireless_hardware() { return 0; };   wireless_should_be_disabled
+}

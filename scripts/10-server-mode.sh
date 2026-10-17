@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 10-server-mode.sh - sourced by setup.sh (both roles)
-# What : make the laptop behave like a headless server.
-#        Wi-Fi/Bluetooth off, lid/power button never suspend, console blanks, no surprise reboots.
+# What : make the machine behave like a headless server.
+#        Wi-Fi/Bluetooth off (only if present; see DISABLE_WIRELESS), lid/power button never suspend, console blanks, no surprise reboots.
 # Files: templates/system/{homelab-rfkill.service,logind-homelab.conf,grub-consoleblank.cfg,unattended-upgrades-no-reboot.conf}
 
 # Kernel modules (drivers) of every wireless NIC found on this machine.
@@ -63,7 +63,11 @@ housekeeping() {
   [[ "$(disk_kind)" == ssd ]] && systemctl enable --now fstrim.timer >/dev/null 2>&1 || true
 }
 
-disable_wireless
+if wireless_should_be_disabled; then
+  disable_wireless
+else
+  log "Wireless left alone (DISABLE_WIRELESS=$DISABLE_WIRELESS, no Wi-Fi/Bluetooth hardware or disabled by setting)"
+fi
 ignore_lid_and_sleep
 blank_console
 housekeeping

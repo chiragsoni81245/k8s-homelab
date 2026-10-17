@@ -25,8 +25,9 @@ check_resources() {
 detect_network() {
   DEFAULT_IF="$(ip -4 route show default | awk '{print $5; exit}')"
   [[ -n "$DEFAULT_IF" ]] || die "No default route. Connect Ethernet first."
-  [[ ! -d "/sys/class/net/$DEFAULT_IF/wireless" ]] \
-    || die "Default route is on Wi-Fi ($DEFAULT_IF). Use Ethernet; Wi-Fi is disabled by this script."
+  if [[ -d "/sys/class/net/$DEFAULT_IF/wireless" ]] && wireless_should_be_disabled; then
+    die "Default route is on Wi-Fi ($DEFAULT_IF) but Wi-Fi gets disabled. Use Ethernet, or set DISABLE_WIRELESS=no."
+  fi
 
   local detected_ip
   detected_ip="$(ip -4 -o addr show dev "$DEFAULT_IF" scope global | awk '{print $4}' | cut -d/ -f1 | head -n1)"

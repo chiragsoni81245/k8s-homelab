@@ -147,6 +147,21 @@ disk_kind() {
   [[ "$rot" == 1 ]] && echo hdd || echo ssd
 }
 
+# has_wireless_hardware -> 0 if this machine has a Wi-Fi or Bluetooth radio
+has_wireless_hardware() {
+  compgen -G '/sys/class/net/*/wireless' >/dev/null && return 0
+  compgen -G '/sys/class/bluetooth/*' >/dev/null && return 0
+  have rfkill && [[ -n "$(rfkill list 2>/dev/null)" ]] && return 0
+  return 1
+}
+
+# wireless_should_be_disabled -> honours DISABLE_WIRELESS=auto|yes|no
+wireless_should_be_disabled() {
+  case "$DISABLE_WIRELESS" in
+    yes) return 0 ;; no) return 1 ;; *) has_wireless_hardware ;;
+  esac
+}
+
 # retry N SLEEP cmd...
 retry() { local n="$1" s="$2" i; shift 2; for ((i=1;i<=n;i++)); do "$@" && return 0; sleep "$s"; done; return 1; }
 
