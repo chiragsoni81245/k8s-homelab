@@ -108,7 +108,10 @@ installed_version() { dpkg-query -W -f='${Version}' "$1" 2>/dev/null || echo "-"
 add_apt_repo() {
   local name="$1" key_url="$2" line="$3" keyring="/etc/apt/keyrings/$1.gpg"
   install -d -m 0755 /etc/apt/keyrings
-  [[ -s "$keyring" ]] || curl -fsSL "$key_url" | gpg --dearmor --yes -o "$keyring"
+  if [[ ! -s "$keyring" ]]; then
+    curl -fsSL "$key_url" | gpg --dearmor --yes -o "$keyring"
+  fi
+  chmod 644 "$keyring"                                   # apt reads keyrings as an unprivileged user
   if echo "deb [signed-by=$keyring] $line" | write_file "/etc/apt/sources.list.d/$name.list"; then _APT_UPDATED=""; fi
   apt_update_once
 }

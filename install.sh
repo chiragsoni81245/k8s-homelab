@@ -12,7 +12,7 @@ DIR="${HOMELAB_DIR:-/opt/k8s-homelab}"
 [[ -r /dev/tty ]] || echo "WARNING: no TTY; prompts will need env vars (NONINTERACTIVE=1 ROLE=...)." >&2
 
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
+apt-get update -qq || echo "WARNING: apt-get update reported problems (a third-party repo?); continuing." >&2
 apt-get install -y -qq git curl ca-certificates
 
 if [[ -d "$DIR/.git" ]]; then

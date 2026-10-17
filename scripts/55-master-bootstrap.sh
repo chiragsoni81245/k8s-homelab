@@ -111,7 +111,7 @@ write_join_info() {
   local argo_pw join_cmd
   argo_pw="$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' 2>/dev/null | base64 -d || true)"
   join_cmd="$(kubeadm token create --ttl "${JOIN_TOKEN_TTL:-24h0m0s}" --print-join-command)"
-  umask 077
+  ( umask 077   # subshell: the stricter umask must not leak into later steps
   cat >/root/k8s-join-info.txt <<INFO
 Generated $(date -Is)
 Control-plane endpoint : $CONTROL_PLANE_ENDPOINT ($MASTER_IP)
@@ -120,6 +120,7 @@ Worker join command    : $join_cmd
 Argo CD admin password : ${argo_pw:-<initial secret already removed>}
 Argo CD UI             : kubectl -n argocd port-forward svc/argocd-server 8080:80  ->  http://localhost:8080  (user: admin)
 INFO
+  )
   echo; cat /root/k8s-join-info.txt; echo
   log "Saved to /root/k8s-join-info.txt. On the worker run setup.sh, choose 'worker' (asks master IP, token, CA hash)."
 }
