@@ -1,0 +1,9 @@
+storageClass:
+  create: true
+  name: local-path
+  defaultClass: false
+  reclaimPolicy: Delete
+nodePathMap:
+  - node: DEFAULT_PATH_FOR_NON_LISTED_NODES
+    paths:
+      - /var/lib/local-path   # on the node's root disk

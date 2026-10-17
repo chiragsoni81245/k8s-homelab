@@ -1,0 +1,18 @@
+# Shared by the setup.sh bootstrap install and Argo CD (single source of truth).
+# k8sServiceHost MUST equal the control-plane endpoint chosen at `setup.sh` (checked by the script).
+k8sServiceHost: k8s-api.homelab.chiragsoni.org
+k8sServicePort: 6443
+kubeProxyReplacement: true
+ipam:
+  mode: kubernetes          # use the per-node podCIDR assigned by kubeadm (10.244.0.0/16)
+routingMode: tunnel
+tunnelProtocol: vxlan
+l2announcements:
+  enabled: true             # answer ARP for LoadBalancer IPs on the LAN
+k8sClientRateLimit:         # required headroom for L2 announcement leader election
+  qps: 20
+  burst: 100
+operator:
+  replicas: 1               # 2 nodes only
+hubble:
+  enabled: false            # keep the 8GB Asus light; enable later via values

@@ -1,0 +1,7 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-data
+provisioner: kubernetes.io/no-provisioner   # static PVs only
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain

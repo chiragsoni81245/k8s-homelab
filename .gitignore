@@ -1,0 +1,6 @@
+config.env
+*.secret.yaml
+*.key
+*.pem
+id_*
+.serena/

@@ -1,0 +1,23 @@
+# Argo CD manages itself once bootstrapped by setup.sh.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  annotations: {argocd.argoproj.io/sync-wave: "0"}
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: platform
+  destination: {server: https://kubernetes.default.svc, namespace: argocd}
+  sources:
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      targetRevision: 10.10.5   # pinned; setup.sh bootstrap reads this same value
+      helm:
+        valueFiles: [$values/gitops/apps/platform/argocd/values.yaml]
+    - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
+      targetRevision: main # homelab-revision
+      ref: values
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [ServerSideApply=true]

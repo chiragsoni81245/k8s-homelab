@@ -1,0 +1,3 @@
+# Defaults are fine; override here (e.g. deployment.replicas, resources).
+deployment:
+  replicas: 1

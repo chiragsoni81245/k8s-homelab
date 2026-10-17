@@ -1,0 +1,20 @@
+# App-of-apps: creates one Argo Application per gitops/apps/<category>/<name>/application.yaml.
+# Add an app = add a folder with application.yaml (+ values.yaml) and git push.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  destination: {server: https://kubernetes.default.svc, namespace: argocd}
+  source:
+    repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
+    targetRevision: main # homelab-revision
+    path: gitops/apps
+    directory:
+      recurse: true
+      include: '**/application.yaml'
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}

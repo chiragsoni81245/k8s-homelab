@@ -1,0 +1,31 @@
+# Rendered by scripts/50-master-init.sh. Variables: MASTER_IP NODE_NAME NODE_LABELS K8S_VERSION
+#   CONTROL_PLANE_ENDPOINT POD_CIDR SERVICE_CIDR APISERVER_EXTRA
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: ${MASTER_IP}
+  bindPort: 6443
+nodeRegistration:
+  name: ${NODE_NAME}
+  taints: []                      # no control-plane taint => the master also runs workloads
+  kubeletExtraArgs:
+    - name: node-ip
+      value: "${MASTER_IP}"
+    - name: node-labels
+      value: "${NODE_LABELS}"
+skipPhases:
+  - addon/kube-proxy              # Cilium replaces kube-proxy
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+kubernetesVersion: v${K8S_VERSION}
+controlPlaneEndpoint: "${CONTROL_PLANE_ENDPOINT}:6443"
+networking:
+  podSubnet: ${POD_CIDR}
+  serviceSubnet: ${SERVICE_CIDR}
+apiServer:
+  certSANs:
+    - ${CONTROL_PLANE_ENDPOINT}
+    - ${MASTER_IP}
+    - ${NODE_NAME}
+${APISERVER_EXTRA}

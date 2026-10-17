@@ -1,0 +1,18 @@
+# Static storage for the Asus's /DATA partition (path-only Application, no chart).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: local-storage
+  namespace: argocd
+  annotations: {argocd.argoproj.io/sync-wave: "1"}
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: platform
+  destination: {server: https://kubernetes.default.svc, namespace: kube-system}
+  source:
+    repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
+    targetRevision: main # homelab-revision
+    path: gitops/apps/platform/local-storage
+    directory: {include: '{storageclass,data-pv}.yaml'}
+  syncPolicy:
+    automated: {prune: false, selfHeal: true}   # never prune the PV that points at your media

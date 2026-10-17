@@ -1,0 +1,10 @@
+[Unit]
+Description=Keep Wi-Fi and Bluetooth blocked (k8s-homelab)
+After=systemd-rfkill.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/rfkill block wifi bluetooth
+
+[Install]
+WantedBy=multi-user.target

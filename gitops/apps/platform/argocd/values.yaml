@@ -1,0 +1,17 @@
+# Trimmed for a 2-node homelab. TLS will be terminated at Envoy Gateway later, so serve plain HTTP.
+global:
+  domain: argocd.homelab.chiragsoni.org
+configs:
+  params:
+    server.insecure: true
+  repositories:
+    # Envoy Gateway's chart is an OCI artifact on Docker Hub; Argo needs it registered.
+    envoyproxy-oci:
+      name: envoyproxy
+      type: helm
+      url: docker.io/envoyproxy
+      enableOCI: "true"
+dex:
+  enabled: false
+notifications:
+  enabled: false
