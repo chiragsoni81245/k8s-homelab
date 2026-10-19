@@ -1,0 +1,77 @@
+# Through Envoy Gateway on 192.168.0.200 (see docs/networking.md); point these names at it like jellyfin.
+# vmselect and Alertmanager have no login of their own - keep them LAN/NetBird-only. Grafana has its own login.
+# group/kind/weight/matches spelled out: the API server defaults them, which would show up as an Argo diff.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: vmselect
+  namespace: monitoring
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: homelab
+      namespace: envoy-gateway-system
+  hostnames:
+    - vm.chiragsoni.org            # vmui: https://vm.chiragsoni.org/select/0/vmui/
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ''
+          kind: Service
+          name: vmselect-vm
+          port: 8481
+          weight: 1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: homelab
+      namespace: envoy-gateway-system
+  hostnames:
+    - grafana.chiragsoni.org
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ''
+          kind: Service
+          name: victoria-metrics-grafana
+          port: 80
+          weight: 1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: homelab
+      namespace: envoy-gateway-system
+  hostnames:
+    - alertmanager.chiragsoni.org
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ''
+          kind: Service
+          name: vmalertmanager-vm
+          port: 9093
+          weight: 1

@@ -12,7 +12,13 @@ l2announcements:
 k8sClientRateLimit:         # required headroom for L2 announcement leader election
   qps: 20
   burst: 100
+prometheus:
+  enabled: true             # agent metrics on :9962, scraped by apps/observability/victoria-metrics/scrapes.yaml
+  metricsService: true      # headless Service cilium-agent for the scrape
 operator:
   replicas: 1               # 2 nodes only
+  prometheus:
+    enabled: true           # operator metrics on :9963 (chart default, spelled out)
+    metricsService: true    # headless Service cilium-operator for the scrape
 hubble:
   enabled: false            # keep the 8GB Asus light; enable later via values

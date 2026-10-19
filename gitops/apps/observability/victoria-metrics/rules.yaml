@@ -1,0 +1,47 @@
+# Alerts for the add-ons the default rules don't know about. Targets being down is already covered by the
+# default TargetDown alert (job labels set in scrapes.yaml), pods/DaemonSets not ready by the kubernetes-apps rules.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: homelab-addons
+  namespace: monitoring
+spec:
+  groups:
+    - name: envoy-gateway
+      rules:
+        - alert: EnvoyBackendHigh5xxRate
+          # only when the backend sees real traffic (> 0.1 req/s), so one failed request at night doesn't page
+          expr: |
+            (
+              sum by (envoy_cluster_name) (rate(envoy_cluster_upstream_rq_xx{envoy_response_code_class="5"}[5m]))
+                /
+              sum by (envoy_cluster_name) (rate(envoy_cluster_upstream_rq_total[5m]))
+            ) > 0.05
+            and
+            sum by (envoy_cluster_name) (rate(envoy_cluster_upstream_rq_total[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: 'More than 5% 5xx responses from {{ $labels.envoy_cluster_name }}'
+            description: '{{ $value | humanizePercentage }} of requests to {{ $labels.envoy_cluster_name }} failed with 5xx over the last 5m.'
+        - alert: GatewayCertificateExpiringSoon
+          # cert-manager renews 30 days before expiry, so under 14 days means renewal is failing
+          expr: min by (pod) (envoy_server_days_until_first_cert_expiring) < 14
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: 'Gateway TLS certificate expires in {{ $value }} days'
+            description: 'Check the wildcard-chiragsoni-org Certificate (cert-manager-issuers app) and the cert-manager logs.'
+    - name: cilium
+      rules:
+        - alert: CiliumHighDropRate
+          # some drops are normal (e.g. unsupported L3 protocols); a sustained high rate usually means a routing/policy problem
+          expr: sum by (pod, reason) (rate(cilium_drop_count_total[5m])) > 10
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: 'Cilium on {{ $labels.pod }} drops {{ $value | humanize }} packets/s ({{ $labels.reason }})'
+            description: 'Sustained packet drops. Check `kubectl -n kube-system exec ds/cilium -- cilium-dbg monitor --type drop`.'

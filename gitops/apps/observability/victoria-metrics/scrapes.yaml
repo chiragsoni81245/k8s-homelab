@@ -1,0 +1,85 @@
+# Extra scrape targets for vmagent (the chart already covers kubelet, cAdvisor, apiserver, CoreDNS, node-exporter,
+# kube-state-metrics and the VM components). Each sets a fixed `job` label, used by the TargetDown default alert.
+#
+# Cilium agent + operator: through the headless metrics Services the Cilium chart creates
+# (prometheus.metricsService / operator.prometheus.metricsService in apps/platform/cilium/values.yaml), port "metrics".
+# podTargetLabels copy the pod labels the Cilium dashboards filter on (k8s_app, io_cilium_app).
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: cilium-agent
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cilium-agent
+  podTargetLabels:
+    - k8s-app
+  endpoints:
+    - port: metrics
+      relabelConfigs:
+        - targetLabel: job
+          replacement: cilium-agent
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: cilium-operator
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cilium-operator
+  podTargetLabels:
+    - io.cilium/app
+  endpoints:
+    - port: metrics
+      relabelConfigs:
+        - targetLabel: job
+          replacement: cilium-operator
+---
+# Envoy proxies (the traffic): per-backend requests, response codes, latency, bytes, TLS. On by default in Envoy Gateway.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: envoy-proxy
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - envoy-gateway-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: proxy
+      app.kubernetes.io/managed-by: envoy-gateway
+  podMetricsEndpoints:
+    - port: metrics
+      path: /stats/prometheus
+      relabelConfigs:
+        - targetLabel: job
+          replacement: envoy-proxy
+---
+# Envoy Gateway controller: xDS pushes, reconcile errors, status updates.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: envoy-gateway
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - envoy-gateway-system
+  selector:
+    matchLabels:
+      control-plane: envoy-gateway
+  endpoints:
+    - port: metrics
+      relabelConfigs:
+        - targetLabel: job
+          replacement: envoy-gateway

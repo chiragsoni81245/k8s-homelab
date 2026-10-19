@@ -40,6 +40,6 @@ tools/      set-repo-url.sh        tests/ smoke-test.sh        docs/
 - Host upgrades: edit `versions.env`, then `sudo ./update.sh k8s|containerd|helm|netbird|os|all` (`--dry-run` first).
 - Add-on upgrades & new apps: edit `gitops/`, push - see [docs/gitops.md](docs/gitops.md).
 - Tests: `tests/run.sh` (lint + unit tests, no root/cluster; needs `bats shellcheck python3-yaml gettext-base jq`; also runs in GitHub Actions). On a live master: `sudo tests/smoke-test.sh`.
-- Docs: [networking](docs/networking.md) · [storage](docs/storage.md) · [TLS](docs/tls.md) · [secrets](docs/secrets.md) · [troubleshooting](docs/troubleshooting.md)
+- Docs: [networking](docs/networking.md) · [storage](docs/storage.md) · [TLS](docs/tls.md) · [secrets](docs/secrets.md) · [observability](docs/observability.md) · [troubleshooting](docs/troubleshooting.md)
 
-Pinned versions (2026-10-17): Kubernetes 1.36.5, containerd 2.4.2, Helm 4.3.1, Cilium 1.20.3, Argo CD chart 10.10.5, Envoy Gateway v1.9.2, cert-manager v1.21.2, NetBird 0.81.2.
+Pinned versions (2026-10-17): Kubernetes 1.36.5, containerd 2.4.2, Helm 4.3.1, Cilium 1.20.3, Argo CD chart 10.10.5, Envoy Gateway v1.9.2, cert-manager v1.21.2, victoria-metrics-k8s-stack 0.96.0, NetBird 0.81.2.
