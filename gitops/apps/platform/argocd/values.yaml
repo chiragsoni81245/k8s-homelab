@@ -1,4 +1,4 @@
-# Trimmed for a 2-node homelab. TLS will be terminated at Envoy Gateway later, so serve plain HTTP.
+# Trimmed for a 2-node homelab. TLS is terminated at Envoy Gateway (httproute.yaml, argocd.chiragsoni.org), so serve plain HTTP.
 global:
   domain: argocd.chiragsoni.org
 configs:

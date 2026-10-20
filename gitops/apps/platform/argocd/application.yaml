@@ -23,9 +23,22 @@ spec:
     - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
       targetRevision: main # homelab-revision
       ref: values
+    - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
+      targetRevision: main # homelab-revision
+      path: gitops/apps/platform/argocd
+      # argocd.chiragsoni.org route (needs the Gateway API CRDs from the envoy-gateway app)
+      directory:
+        include: httproute.yaml
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true   # fresh install: HTTPRoute CRD arrives later with envoy-gateway (wave 2)
+    retry:
+      limit: 10                            # ...so keep retrying until it exists
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
