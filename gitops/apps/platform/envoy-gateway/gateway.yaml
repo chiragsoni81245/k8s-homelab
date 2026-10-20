@@ -11,8 +11,9 @@ spec:
     type: Kubernetes
     kubernetes:
       # One Envoy per node (DaemonSet instead of the default single-replica Deployment). With externalTrafficPolicy
-      # Local, Cilium only hands .200 traffic to an Envoy on the node that received it - LAN traffic lands on the
-      # L2-leader node, NetBird traffic on the routing peer (Cilium's eBPF also runs on wt0). Every node needs one.
+      # Local, Cilium only hands .200 traffic to an Envoy on the node that received it, i.e. the node announcing .200
+      # (pinned to the Asus in cilium/l2-announcement.yaml). The other Envoys serve nothing external but are ready
+      # if that pin changes.
       envoyDaemonSet: {}
       envoyService:
         type: LoadBalancer

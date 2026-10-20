@@ -3,6 +3,11 @@ kind: CiliumL2AnnouncementPolicy
 metadata:
   name: homelab
 spec:
+  # Only the Asus answers ARP for LB IPs, so the NetBird routing peer (Dell) always forwards them over the LAN
+  # instead of to itself (a node can't ARP-resolve its own announced IP). See docs/networking.md.
+  nodeSelector:
+    matchLabels:
+      homelab/storage: media
   loadBalancerIPs: true
   interfaces:
     - ^en.*

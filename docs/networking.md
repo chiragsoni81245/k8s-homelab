@@ -31,4 +31,8 @@ Reaching LoadBalancer IPs (e.g. `192.168.0.200`) over NetBird:
   traffic before NetBird's forward ACL (`sudo nft list table ip netbird`, chain `netbird-rt-fwd`) and it was silently lost.
   Now the routing peer forwards it normally: NetBird policy -> masquerade -> LAN -> the node announcing the LB IP.
 - The routing peer must **not** be the node announcing the LB IP (a node can't ARP-resolve its own announced IP).
-  Check the holder with `kubectl -n kube-system get lease | grep l2announce`.
+  So L2 announcements are pinned to the Asus (`l2-announcement.yaml`, `homelab/storage=media`) and the Dell is the routing
+  peer - don't make the Asus a routing peer for the LB IPs. Check the holder: `kubectl -n kube-system get lease | grep l2announce`.
+```
+laptop -WireGuard-> Dell wt0 -NetBird policy + masquerade-> enp5s0 -ARP .200-> Asus -Cilium-> Envoy (Asus)
+```
