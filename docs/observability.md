@@ -48,6 +48,10 @@ node-exporter                          node-exporter
 ## What is scraped
 node-exporter, kubelet, cAdvisor, kube-state-metrics, kube-apiserver, CoreDNS, the VM components, Grafana, Cilium (agent `:9962`,
 operator `:9963`), Envoy proxies (`:19001/stats/prometheus`) and the Envoy Gateway controller (`:19001/metrics`).
+**GPU (Dell, AMD):** node-exporter's `drm` collector (`--collector.drm` in `values.yaml`) adds `node_drm_gpu_busy_percent`,
+`node_drm_memory_vram_{used,size}_bytes` and GTT usage per `card`; temperature and power come from `hwmon` (`chip_name="amdgpu"`).
+Grafana dashboard **AMD GPU** (`dashboards/amd-gpu.json`, fetched by the sync-job from this repo's public `main` branch).
+The card with ~6 GB VRAM is the dedicated Navi 10 (PCI `03:00.0`); the other is the Renoir iGPU (`07:00.0`).
 Not scraped: etcd, kube-scheduler, kube-controller-manager (bound to `127.0.0.1` by kubeadm) and kube-proxy (replaced by Cilium).
 
 ## Alerts

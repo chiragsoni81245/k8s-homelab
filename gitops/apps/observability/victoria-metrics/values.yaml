@@ -134,6 +134,12 @@ kube-state-metrics:
       memory: 128Mi
 
 prometheus-node-exporter:
+  # The chart's two filesystem args (copied: a list replaces the default) + the drm collector for AMD GPU busy %/VRAM/GTT
+  # (node_drm_*). GPU temperature/power come from the hwmon collector (on by default, chip_name="amdgpu").
+  extraArgs:
+    - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+    - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|erofs|sysfs|tracefs)$
+    - --collector.drm
   resources:
     requests:
       cpu: 10m
@@ -169,3 +175,7 @@ defaultDashboards:
       url: https://raw.githubusercontent.com/envoyproxy/gateway/v1.9.2/charts/gateway-addons-helm/dashboards/envoy-proxy-global.json
     envoy-clusters:
       url: https://raw.githubusercontent.com/envoyproxy/gateway/v1.9.2/charts/gateway-addons-helm/dashboards/envoy-clusters.json
+    # Our own, from this repo (dashboards/amd-gpu.json). Fetched from the public main branch at sync time - change the
+    # URL if you fork or make the repo private.
+    amd-gpu:
+      url: https://raw.githubusercontent.com/chiragsoni81245/k8s-homelab/main/gitops/apps/observability/victoria-metrics/dashboards/amd-gpu.json
