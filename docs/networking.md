@@ -26,7 +26,9 @@ with `HTTPRoute`s.
 `scripts/70-netbird.sh` installs the agent on the node OS (works even if Kubernetes is down). In the NetBird console:
 make a node a **routing peer** for `192.168.0.0/24` (or just the LB range + node IPs), then restrict with ACL groups.
 
-Reaching LoadBalancer IPs (e.g. `192.168.0.200`) over NetBird: Cilium also attaches its eBPF to `wt0`, so on the routing
-peer the LB IP is handled by Cilium *before* NetBird's forward ACL (`nft list table ip netbird`) or ufw ever see it. With
-`externalTrafficPolicy: Local` it only goes to an Envoy on that same node - which is why Envoy runs as a DaemonSet (one per
-node, `gateway.yaml`). Consequence: for LB IPs the route's **distribution groups** are the effective access control, not the policy.
+Reaching LoadBalancer IPs (e.g. `192.168.0.200`) over NetBird:
+- Cilium is kept off `wt0` (`devices: "en+,eth+"` in the Cilium values). Auto-detected, Cilium's eBPF on `wt0` took LB-IP
+  traffic before NetBird's forward ACL (`sudo nft list table ip netbird`, chain `netbird-rt-fwd`) and it was silently lost.
+  Now the routing peer forwards it normally: NetBird policy -> masquerade -> LAN -> the node announcing the LB IP.
+- The routing peer must **not** be the node announcing the LB IP (a node can't ARP-resolve its own announced IP).
+  Check the holder with `kubectl -n kube-system get lease | grep l2announce`.
