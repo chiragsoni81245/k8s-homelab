@@ -1,0 +1,27 @@
+# alertmanager.chiragsoni.org through Envoy Gateway on 192.168.0.200 (HTTPS only).
+# Alertmanager has no login of its own - keep it LAN/NetBird-only.
+# group/kind/weight/matches spelled out: the API server defaults them, which would show up as an Argo diff.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: homelab
+      namespace: envoy-gateway-system
+  hostnames:
+    - alertmanager.chiragsoni.org
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ''
+          kind: Service
+          name: vmalertmanager-vm
+          port: 9093
+          weight: 1

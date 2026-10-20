@@ -1,0 +1,58 @@
+# filebeat.yml: container-log input + Kubernetes metadata -> VictoriaLogs (vlsingle-vm) output.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-config
+  namespace: monitoring
+  labels:
+    k8s-app: filebeat
+data:
+  filebeat.yml: |-
+    filebeat.inputs:
+      - type: filestream
+        id: kubernetes-container-logs
+        paths:
+          - /var/log/containers/*.log
+        parsers:
+          - container: ~
+        prospector:
+          scanner:
+            fingerprint.enabled: true
+            symlinks: true
+        file_identity.fingerprint: ~
+        processors:
+          - add_kubernetes_metadata:
+              host: ${NODE_NAME}
+              matchers:
+                - logs_path:
+                    logs_path: /var/log/containers/
+
+    processors:
+      # Beats bookkeeping fields nobody queries - smaller logs in VictoriaLogs
+      - drop_fields:
+          ignore_missing: true
+          fields:
+            - agent
+            - ecs
+            - input
+            - log.offset
+            - log.file.device_id
+            - log.file.inode
+            - log.file.fingerprint
+            - kubernetes.node.uid
+            - kubernetes.pod.uid
+            - kubernetes.namespace_uid
+
+    output.elasticsearch:
+      hosts:
+        - http://vlsingle-vm.monitoring.svc:9428/insert/elasticsearch/
+      parameters:
+        _msg_field: message
+        _time_field: '@timestamp'
+        # one log stream per container: fast queries like {kubernetes.namespace="jellyfin"}
+        _stream_fields: kubernetes.namespace,kubernetes.pod.name,kubernetes.container.name
+      allow_older_versions: true   # VictoriaLogs reports an older Elasticsearch version than Filebeat 9 expects
+
+    # No Elasticsearch here: skip index templates / ILM setup
+    setup.ilm.enabled: false
+    setup.template.enabled: false

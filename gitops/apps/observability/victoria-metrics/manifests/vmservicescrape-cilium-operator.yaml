@@ -1,0 +1,20 @@
+# Cilium operator via its headless metrics Service, port "metrics" (details: vmservicescrape-cilium-agent.yaml).
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: cilium-operator
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cilium-operator
+  podTargetLabels:
+    - io.cilium/app
+  endpoints:
+    - port: metrics
+      relabelConfigs:
+        - targetLabel: job
+          replacement: cilium-operator

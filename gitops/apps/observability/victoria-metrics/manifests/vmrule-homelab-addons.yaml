@@ -1,5 +1,5 @@
 # Alerts for the add-ons the default rules don't know about. Targets being down is already covered by the
-# default TargetDown alert (job labels set in scrapes.yaml), pods/DaemonSets not ready by the kubernetes-apps rules.
+# default TargetDown alert (job labels set in the vm*scrape-*.yaml files), pods/DaemonSets not ready by the kubernetes-apps rules.
 apiVersion: operator.victoriametrics.com/v1beta1
 kind: VMRule
 metadata:

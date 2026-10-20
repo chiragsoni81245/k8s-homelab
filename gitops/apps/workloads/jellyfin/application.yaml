@@ -24,10 +24,8 @@ spec:
       ref: values
     - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
       targetRevision: main # homelab-revision
-      path: gitops/apps/workloads/jellyfin
-      # this app's own volumes + claims
-      directory:
-        include: '{pv,pvc}.yaml'
+      path: gitops/apps/workloads/jellyfin/manifests
+      # plain manifests: this app's own volumes + claims
   # The chart renders the HTTPRoute backendRefs without these fields; the API server fills in the defaults,
   # which Argo would otherwise show as a permanent diff.
   ignoreDifferences:

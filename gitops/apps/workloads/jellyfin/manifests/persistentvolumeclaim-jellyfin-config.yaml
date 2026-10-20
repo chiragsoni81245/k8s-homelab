@@ -1,0 +1,14 @@
+# Claims persistentvolume-jellyfin-config.yaml (volumeName); used by values.yaml persistence.config.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-config
+  namespace: jellyfin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-data
+  volumeName: jellyfin-config
+  resources:
+    requests:
+      storage: 10Gi

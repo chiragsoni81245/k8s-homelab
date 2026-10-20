@@ -24,9 +24,7 @@ spec:
       ref: values
     - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
       targetRevision: main # homelab-revision
-      path: gitops/apps/platform/cilium
-      directory:
-        include: '{lb-ippool,l2-announcement}.yaml'
+      path: gitops/apps/platform/cilium/manifests
   syncPolicy:
     automated:
       prune: true

@@ -25,10 +25,8 @@ spec:
       ref: values
     - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
       targetRevision: main # homelab-revision
-      path: gitops/apps/platform/argocd
-      # argocd.chiragsoni.org route (needs the Gateway API CRDs from the envoy-gateway app)
-      directory:
-        include: httproute.yaml
+      path: gitops/apps/platform/argocd/manifests
+      # plain manifests (argocd.chiragsoni.org route; needs the Gateway API CRDs from the envoy-gateway app)
   syncPolicy:
     automated:
       prune: true

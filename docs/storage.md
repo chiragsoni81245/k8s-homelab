@@ -8,11 +8,11 @@
 ## Pattern: every app brings its own PV + PVC + pod
 There is no shared "data" volume. Each app declares exactly the folder(s) it needs:
 ```
-/DATA/Media                    -> Jellyfin            (apps/workloads/jellyfin: pv.yaml + pvc.yaml)
+/DATA/Media                    -> Jellyfin            (apps/workloads/jellyfin/manifests: persistentvolume-* + persistentvolumeclaim-*)
 /DATA/AppData/jellyfin-k8s     -> Jellyfin config      (same files)
 /DATA/Downloads/Torrent        -> Transmission         (its own app, same pattern, when you add it)
 ```
-A PV for a new app (copy `apps/workloads/jellyfin/pv.yaml`):
+A PV for a new app (copy `apps/workloads/jellyfin/manifests/persistentvolume-jellyfin-media.yaml`):
 ```yaml
 apiVersion: v1
 kind: PersistentVolume

@@ -24,9 +24,7 @@ spec:
       ref: values
     - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
       targetRevision: main # homelab-revision
-      path: gitops/apps/platform/envoy-gateway
-      directory:
-        include: gateway.yaml
+      path: gitops/apps/platform/envoy-gateway/manifests
   syncPolicy:
     automated:
       prune: true

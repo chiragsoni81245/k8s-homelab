@@ -25,7 +25,7 @@ install.sh  setup.sh  update.sh  versions.env  config.env.example
 lib/        common.sh config.sh
 scripts/    00-preflight 05-identity 10-server-mode 15-firewall 20-system-prep 30-container-runtime 40-kube-packages
             50-master-init 55-master-bootstrap 65-label-nodes | 35-data-mount 60-worker-join | 70-netbird
-gitops/     bootstrap/ (root app, projects)   apps/<category>/<name>/{application.yaml,values.yaml}   charts/
+gitops/     bootstrap/ (root app, projects)   apps/<category>/<name>/{application.yaml,values.yaml,manifests/<kind>-<name>.yaml}   charts/
 templates/  system/ (logind, sysctl, ...)  kubernetes/ (kubeadm init/join, encryption)  <- config files, edit these
 tools/      set-repo-url.sh        tests/ smoke-test.sh        docs/
 ```

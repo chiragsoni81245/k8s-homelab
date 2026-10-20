@@ -1,0 +1,26 @@
+# grafana.chiragsoni.org through Envoy Gateway on 192.168.0.200 (HTTPS only). Grafana has its own login.
+# group/kind/weight/matches spelled out: the API server defaults them, which would show up as an Argo diff.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: homelab
+      namespace: envoy-gateway-system
+  hostnames:
+    - grafana.chiragsoni.org
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ''
+          kind: Service
+          name: victoria-metrics-grafana
+          port: 80
+          weight: 1

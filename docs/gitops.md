@@ -5,7 +5,9 @@ Argo CD watches `gitops/apps` through the `root` app-of-apps (`gitops/bootstrap/
 1. `mkdir gitops/apps/<category>/<name>` (categories are free-form: `platform`, `observability`, `workloads`, ...)
 2. Add `application.yaml` - a full Argo `Application` (copy `apps/platform/envoy-gateway/application.yaml`).
    Pin the upstream chart in `targetRevision`; take values from `values.yaml` via the `$values` ref source.
-3. Add `values.yaml` (+ any plain manifests, selected with `directory.include`).
+3. Add `values.yaml`; plain manifests go in `manifests/`, **one resource per file** named `<kind>-<name>.yaml`
+   (e.g. `httproute-grafana.yaml`), picked up by a source with `path: gitops/apps/<category>/<name>/manifests` - no include list.
+   `tests/unit/gitops.bats` enforces the layout.
 4. `git push` - Argo creates the Application; control sync/prune/health per app in the UI.
 
 Notes

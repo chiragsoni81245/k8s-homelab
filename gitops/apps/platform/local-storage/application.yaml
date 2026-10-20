@@ -17,9 +17,7 @@ spec:
   source:
     repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
     targetRevision: main # homelab-revision
-    path: gitops/apps/platform/local-storage
-    directory:
-      include: storageclass.yaml
+    path: gitops/apps/platform/local-storage/manifests
   syncPolicy:
     automated:
       prune: true

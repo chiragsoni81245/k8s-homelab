@@ -4,10 +4,11 @@ App: `gitops/apps/observability/victoria-metrics/` (chart `victoria-metrics-k8s-
 
 | File | What |
 |---|---|
-| `values.yaml` | VMCluster, vmagent, vmalert, Alertmanager, Grafana, node-exporter, kube-state-metrics; what is (not) scraped |
-| `scrapes.yaml` | extra targets: Cilium agent + operator, Envoy proxies + Envoy Gateway controller |
-| `rules.yaml` | extra alerts: backend 5xx rate, gateway certificate expiry, Cilium drop rate |
-| `httproute.yaml` | `vm.`, `grafana.`, `alertmanager.chiragsoni.org` through the homelab Gateway |
+| `values.yaml` | VMCluster, VictoriaLogs (vlsingle), vmagent, vmalert, Alertmanager, Grafana, node-exporter, kube-state-metrics; what is (not) scraped |
+| `manifests/vm*scrape-*.yaml` | extra targets: Cilium agent + operator, Envoy proxies + Envoy Gateway controller |
+| `manifests/vmrule-homelab-addons.yaml` | extra alerts: backend 5xx rate, gateway certificate expiry, Cilium drop rate |
+| `manifests/httproute-*.yaml` | `grafana.` and `alertmanager.chiragsoni.org` through the homelab Gateway |
+| `dashboards/*.json` | own Grafana dashboards (AMD GPU) |
 
 ## Layout
 ```
@@ -30,7 +31,7 @@ node-exporter                          node-exporter
      --from-literal=admin-user=admin --from-literal=admin-password="$(openssl rand -base64 24)"
    ```
 2. Push. Argo syncs the `cilium` app (metrics port on; the agents restart one node at a time) and creates `victoria-metrics`.
-3. Point `vm.`, `grafana.` and `alertmanager.chiragsoni.org` at `192.168.0.200` (like Jellyfin, see [networking](networking.md)).
+3. Point `grafana.` and `alertmanager.chiragsoni.org` at `192.168.0.200` (like Jellyfin, see [networking](networking.md)).
 4. Check:
    ```bash
    kubectl -n monitoring get vmcluster,vmagent,vmalert,vmalertmanager   # STATUS operational
@@ -39,11 +40,12 @@ node-exporter                          node-exporter
    Targets: `kubectl -n monitoring port-forward svc/vmagent-vm 8429` -> http://localhost:8429/targets (all `up`).
 
 ## URLs
-- **vmui** (queries, also shows vmalert's alerts/rules): https://vm.chiragsoni.org/select/0/vmui/
+- **vmui** (queries, also shows vmalert's alerts/rules): not exposed. `kubectl -n monitoring port-forward svc/vmselect-vm 8481`
+  -> http://localhost:8481/select/0/vmui/ (or query in Grafana Explore)
 - **Grafana**: https://grafana.chiragsoni.org (dashboards synced at deploy time: Kubernetes views, node-exporter, VM components,
   Cilium agent/operator, Envoy Gateway/proxy/clusters)
 - **Alertmanager**: https://alertmanager.chiragsoni.org
-- vmselect and Alertmanager have **no login**: keep them LAN/NetBird-only (no inbound ports are opened, see networking).
+- Alertmanager has **no login**: keep it LAN/NetBird-only (no inbound ports are opened, see networking).
 
 ## What is scraped
 node-exporter, kubelet, cAdvisor, kube-state-metrics, kube-apiserver, CoreDNS, the VM components, Grafana, Cilium (agent `:9962`,
@@ -54,10 +56,20 @@ Grafana dashboard **AMD GPU** (`dashboards/amd-gpu.json`, fetched by the sync-jo
 The card with ~6 GB VRAM is the dedicated Navi 10 (PCI `03:00.0`); the other is the Renoir iGPU (`07:00.0`).
 Not scraped: etcd, kube-scheduler, kube-controller-manager (bound to `127.0.0.1` by kubeadm) and kube-proxy (replaced by Cilium).
 
+## Logs (VictoriaLogs + Filebeat)
+- **Filebeat** (`gitops/apps/observability/filebeat`, DaemonSet, one per node) tails `/var/log/containers/*.log`, adds
+  Kubernetes metadata and ships to VictoriaLogs' Elasticsearch-compatible endpoint (`vlsingle-vm:9428/insert/elasticsearch/`).
+- **VictoriaLogs** (`vlsingle` in `values.yaml`): 7 days, 10Gi `local-path` (capped at 9GiB on disk). One stream per container
+  (`kubernetes.namespace`, `kubernetes.pod.name`, `kubernetes.container.name`).
+- **Query** in Grafana -> Explore -> data source "VictoriaLogs (DS)" (plugin installed by the chart), LogsQL e.g.
+  `{kubernetes.namespace="jellyfin"} error`, or its own UI: `kubectl -n monitoring port-forward svc/vlsingle-vm 9428`
+  -> http://localhost:9428/select/vmui/
+- Only container logs (stdout/stderr); host logs (journald, kubelet) are not collected.
+
 ## Alerts
-Default rules from the chart (Kubernetes, node, VM components, `TargetDown`, and an always-firing `Watchdog`) plus `rules.yaml`.
+Default rules from the chart (Kubernetes, node, VM components, `TargetDown`, and an always-firing `Watchdog`) plus `manifests/vmrule-homelab-addons.yaml`.
 Alertmanager has **no receiver yet**: alerts show in its UI only. Add one under `alertmanager.config` in `values.yaml`.
 
 ## Add a scrape target
-Expose metrics on a named port, then add a `VMServiceScrape` (via a Service) or `VMPodScrape` (pods directly) to `scrapes.yaml`,
+Expose metrics on a named port, then add a `VMServiceScrape` (via a Service) or `VMPodScrape` (pods directly) as a new file `manifests/<kind>-<name>.yaml`,
 with `namespaceSelector` + `selector` matching the app and a `relabelConfigs` entry setting `job`. Copy an existing one.

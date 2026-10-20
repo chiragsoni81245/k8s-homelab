@@ -20,23 +20,3 @@ spec:
             apiTokenSecretRef:
               name: cloudflare-api-token
               key: api-token
----
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: chiragsoni81245@gmail.com
-    privateKeySecretRef:
-      name: letsencrypt-prod-account-key
-    solvers:
-      - selector:
-          dnsZones:
-            - chiragsoni.org
-        dns01:
-          cloudflare:
-            apiTokenSecretRef:
-              name: cloudflare-api-token
-              key: api-token

@@ -4,10 +4,10 @@
 #   operator             turns the VM* custom resources below into StatefulSets/Deployments
 #   VMCluster            vmstorage x2 (one per node, 5Gi local-path each, replicationFactor 2) + vminsert + vmselect (vmui)
 #   vmagent              scrapes everything, writes to vminsert
-#   vmalert + alertmanager   default rules + rules.yaml next to this file; NO receiver yet (alerts only show in the UIs)
+#   vmalert + alertmanager   default rules + manifests/vmrule-homelab-addons.yaml; NO receiver yet (alerts only show in the UIs)
 #   grafana              dashboards (synced from upstream at deploy time by the chart's sync-job)
 #   node-exporter (both nodes), kube-state-metrics
-# Extra scrapes for Cilium and Envoy Gateway live in scrapes.yaml; routes in httproute.yaml.
+# Extra scrapes for Cilium and Envoy Gateway, add-on alerts and routes: manifests/ (one resource per file).
 #
 # ONE-TIME, before the first sync (Grafana admin login, never stored in git):
 #   kubectl create namespace monitoring
@@ -30,6 +30,28 @@ victoria-metrics-operator:
 
 vmsingle:
   enabled: false
+
+# VictoriaLogs (single node) - pod logs shipped by Filebeat (apps/observability/filebeat). Query in Grafana
+# (data source "VictoriaLogs (DS)") or its own UI: kubectl -n monitoring port-forward svc/vlsingle-vm 9428 -> /select/vmui/
+vlsingle:
+  enabled: true
+  spec:
+    retentionPeriod: "7d"
+    storage:
+      storageClassName: local-path   # root disk of whichever node it lands on; size nominal, not enforced
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+    extraArgs:
+      retention.maxDiskSpaceUsageBytes: 9GiB   # drop the oldest logs before the 10Gi is exceeded
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
 
 vmcluster:
   enabled: true
@@ -114,6 +136,10 @@ alertmanager:
       - name: blackhole
 
 grafana:
+  # Data source plugin for VictoriaLogs (downloaded from grafana.com at pod start); the chart then provisions
+  # "VictoriaLogs (DS)" pointing at vlsingle.
+  plugins:
+    - victoriametrics-logs-datasource@0.33.1
   admin:
     existingSecret: grafana-admin   # created by hand, see the top of this file
   persistence:

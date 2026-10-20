@@ -38,7 +38,7 @@ choose_gitops_repo() {
 check_committed_values() {
   grep -qE "^k8sServiceHost:[[:space:]]*\"?$CONTROL_PLANE_ENDPOINT\"?" "$PLATFORM_DIR/cilium/values.yaml" \
     || die "cilium/values.yaml k8sServiceHost != $CONTROL_PLANE_ENDPOINT. Edit it, commit, push, re-run."
-  log "LB IP pool (from git): $(awk '/start:|stop:/ {printf "%s ", $2}' "$PLATFORM_DIR/cilium/lb-ippool.yaml")"
+  log "LB IP pool (from git): $(awk '/start:|stop:/ {printf "%s ", $2}' "$PLATFORM_DIR/cilium/manifests/ciliumloadbalancerippool-homelab.yaml")"
 }
 
 # True once Argo CD has an Application with this name: from then on GitOps owns it, and a helm upgrade

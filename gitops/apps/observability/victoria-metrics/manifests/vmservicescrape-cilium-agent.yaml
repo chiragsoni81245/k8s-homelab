@@ -1,0 +1,25 @@
+# Extra scrape target (the chart already covers kubelet, cAdvisor, apiserver, CoreDNS, node-exporter, kube-state-metrics
+# and the VM components). Fixed `job` label, used by the TargetDown default alert - same in every vm*scrape-*.yaml.
+#
+# Cilium agent (operator: vmservicescrape-cilium-operator.yaml): through the headless metrics Services the Cilium chart creates
+# (prometheus.metricsService / operator.prometheus.metricsService in apps/platform/cilium/values.yaml), port "metrics".
+# podTargetLabels copy the pod labels the Cilium dashboards filter on (k8s_app, io_cilium_app).
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: cilium-agent
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cilium-agent
+  podTargetLabels:
+    - k8s-app
+  endpoints:
+    - port: metrics
+      relabelConfigs:
+        - targetLabel: job
+          replacement: cilium-agent

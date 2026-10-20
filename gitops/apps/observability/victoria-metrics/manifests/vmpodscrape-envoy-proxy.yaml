@@ -1,0 +1,20 @@
+# Envoy proxies (the traffic): per-backend requests, response codes, latency, bytes, TLS. On by default in Envoy Gateway.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: envoy-proxy
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - envoy-gateway-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: proxy
+      app.kubernetes.io/managed-by: envoy-gateway
+  podMetricsEndpoints:
+    - port: metrics
+      path: /stats/prometheus
+      relabelConfigs:
+        - targetLabel: job
+          replacement: envoy-proxy

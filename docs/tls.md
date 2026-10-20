@@ -14,7 +14,7 @@ Your apps never need to be reachable from the internet.
 3. Watch it issue: `kubectl -n envoy-gateway-system get certificate` -> `READY True` (first time takes ~1-3 minutes).
    If not: `kubectl -n cert-manager get challenges,orders` and `kubectl -n envoy-gateway-system describe certificate wildcard-chiragsoni-org`.
 4. It started on the **staging** issuer (browsers do not trust it); it now points at production. To go back to staging, edit
-   `gitops/apps/platform/cert-manager-issuers/certificate-wildcard.yaml`: `issuerRef.name: letsencrypt-prod`, commit, push.
+   `gitops/apps/platform/cert-manager-issuers/manifests/certificate-wildcard-chiragsoni-org.yaml`: `issuerRef.name: letsencrypt-prod`, commit, push.
    Argo re-issues a trusted certificate. Renewal is automatic (~30 days before expiry).
 
 ## DNS records so your devices find the apps
@@ -35,5 +35,5 @@ hostnames:
 ```
 **HTTPS only, enforced by the Gateway** (nothing to add per route). The `http` listener (port 80) accepts routes from
 `envoy-gateway-system` only, so app routes attach to `https` alone; the single route on port 80 (`https-redirect` in
-`gateway.yaml`) answers every plain-HTTP request with a 301 to `https://<same host and path>`.
+`envoy-gateway/manifests/httproute-https-redirect.yaml`) answers every plain-HTTP request with a 301 to `https://<same host and path>`.
 Check: `curl -sI http://jellyfin.chiragsoni.org/` -> `301` with `location: https://jellyfin.chiragsoni.org/`.

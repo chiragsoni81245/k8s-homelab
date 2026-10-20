@@ -1,0 +1,35 @@
+# The shared Gateway for every app: HTTPS on *.chiragsoni.org (wildcard cert from cert-manager), HTTP only redirects.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: homelab
+  namespace: envoy-gateway-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  gatewayClassName: envoy
+  listeners:
+    # HTTPS only, enforced here for every app: port 80 just redirects (httproute-https-redirect.yaml). `from: Same`
+    # means app routes (other namespaces) can't attach to it, so a route with no sectionName lands on `https` only.
+    # (Certificates use DNS-01, so port 80 isn't needed for ACME.)
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.chiragsoni.org"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          # group/kind spelled out: the API server defaults them, which would show up as an Argo diff
+          # issued by cert-manager (cert-manager-issuers app)
+          - group: ''
+            kind: Secret
+            name: wildcard-chiragsoni-org
+      allowedRoutes:
+        namespaces:
+          from: All

@@ -1,0 +1,14 @@
+# Envoy Gateway's class, parameterised by envoyproxy-homelab.yaml (LB IP, DaemonSet).
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: homelab
+    namespace: envoy-gateway-system

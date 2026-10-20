@@ -16,9 +16,7 @@ spec:
   source:
     repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
     targetRevision: main # homelab-revision
-    path: gitops/apps/platform/cert-manager-issuers
-    directory:
-      include: '{clusterissuers,certificate-wildcard}.yaml'
+    path: gitops/apps/platform/cert-manager-issuers/manifests
   syncPolicy:
     automated:
       prune: true

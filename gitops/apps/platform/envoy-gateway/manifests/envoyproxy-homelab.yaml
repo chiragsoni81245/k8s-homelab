@@ -1,0 +1,22 @@
+# Shared entry point. The Envoy Service gets a fixed LAN IP from the Cilium pool (L2-announced).
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: homelab
+  namespace: envoy-gateway-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      # One Envoy per node (DaemonSet instead of the default single-replica Deployment). With externalTrafficPolicy
+      # Local, Cilium only hands .200 traffic to an Envoy on the node that received it, i.e. the node announcing .200
+      # (pinned to the Asus in cilium/manifests/ciliuml2announcementpolicy-homelab.yaml). The other Envoys serve nothing external but are ready
+      # if that pin changes.
+      envoyDaemonSet: {}
+      envoyService:
+        type: LoadBalancer
+        externalTrafficPolicy: Local   # Envoy Gateway's default, spelled out: keeps the real client IP
+        annotations:
+          lbipam.cilium.io/ips: 192.168.0.200

@@ -47,8 +47,8 @@ PY
   python3 - "$ROOT" <<'PY'
 import sys, ipaddress, yaml, re
 root = sys.argv[1]
-pool = yaml.safe_load(open(f"{root}/gitops/apps/platform/cilium/lb-ippool.yaml"))["spec"]["blocks"][0]
-gw = open(f"{root}/gitops/apps/platform/envoy-gateway/gateway.yaml").read()
+pool = yaml.safe_load(open(f"{root}/gitops/apps/platform/cilium/manifests/ciliumloadbalancerippool-homelab.yaml"))["spec"]["blocks"][0]
+gw = open(f"{root}/gitops/apps/platform/envoy-gateway/manifests/envoyproxy-homelab.yaml").read()
 ip = ipaddress.ip_address(re.search(r"lbipam.cilium.io/ips:\s*(\S+)", gw).group(1))
 assert ipaddress.ip_address(pool["start"]) <= ip <= ipaddress.ip_address(pool["stop"]), "gateway IP outside the pool"
 PY
@@ -109,15 +109,16 @@ PY
 
 @test "jellyfin uses claims that exist in its own namespace" {
   python3 - "$ROOT" <<'PY'
-import sys, yaml
+import sys, yaml, glob
 root = sys.argv[1] + "/gitops/apps/workloads/jellyfin"
 vals = yaml.safe_load(open(root + "/values.yaml"))
 app  = yaml.safe_load(open(root + "/application.yaml"))
 ns   = app["spec"]["destination"]["namespace"]
-claims = {d["metadata"]["name"]: d for d in yaml.safe_load_all(open(root + "/pvc.yaml")) if d}
+claims = {d["metadata"]["name"]: d for f in glob.glob(root + "/manifests/*.yaml") for d in yaml.safe_load_all(open(f))
+          if d and d.get("kind") == "PersistentVolumeClaim"}
 for key in ("config", "media"):
     name = vals["persistence"][key]["existingClaim"]
-    assert name in claims, f"{key}: claim {name} not defined in pvc.yaml"
+    assert name in claims, f"{key}: claim {name} not defined in manifests/"
     assert claims[name]["metadata"]["namespace"] == ns, f"{key}: wrong namespace"
 PY
 }
@@ -128,11 +129,12 @@ PY
 
 @test "TLS chain is consistent: issuer -> certificate -> gateway listener" {
   python3 - "$ROOT" <<'PY'
-import sys, yaml
+import sys, yaml, glob
 root = sys.argv[1] + "/gitops/apps/platform"
-issuers = {d["metadata"]["name"]: d for d in yaml.safe_load_all(open(root + "/cert-manager-issuers/clusterissuers.yaml")) if d}
-cert = yaml.safe_load(open(root + "/cert-manager-issuers/certificate-wildcard.yaml"))
-gw = [d for d in yaml.safe_load_all(open(root + "/envoy-gateway/gateway.yaml")) if d and d["kind"] == "Gateway"][0]
+docs = [d for f in glob.glob(root + "/*/manifests/*.yaml") for d in yaml.safe_load_all(open(f)) if d]
+issuers = {d["metadata"]["name"]: d for d in docs if d["kind"] == "ClusterIssuer"}
+cert = [d for d in docs if d["kind"] == "Certificate"][0]
+gw = [d for d in docs if d["kind"] == "Gateway"][0]
 assert {"letsencrypt-staging", "letsencrypt-prod"} <= set(issuers), "missing issuer"
 for name, i in issuers.items():
     ref = i["spec"]["acme"]["solvers"][0]["dns01"]["cloudflare"]["apiTokenSecretRef"]
@@ -153,5 +155,23 @@ for f in glob.glob(root + "/workloads/*/values.yaml"):
     v = yaml.safe_load(open(f))
     for h in (v.get("httpRoute") or {}).get("hostnames", []):
         assert h.endswith(".chiragsoni.org") and h.count(".") == 2, f"{f}: {h} not matched by *.chiragsoni.org"
+PY
+}
+
+@test "plain manifests: one resource per file, named <kind>-<name>.yaml, under <app>/manifests/" {
+  python3 - "$ROOT" <<'PY'
+import sys, os, glob, yaml
+root = sys.argv[1] + "/gitops/apps"
+files = glob.glob(root + "/*/*/manifests/*.yaml")
+assert files, "no manifests found"
+for f in files:
+    docs = [d for d in yaml.safe_load_all(open(f)) if d]
+    assert len(docs) == 1, f"{f}: {len(docs)} resources (split them)"
+    d = docs[0]
+    want = f"{d['kind'].lower()}-{d['metadata']['name']}.yaml"
+    assert os.path.basename(f) == want, f"{f}: expected file name {want}"
+# app folders hold only application.yaml / values.yaml (+ subfolders); other manifests belong in manifests/
+for f in glob.glob(root + "/*/*/*.yaml"):
+    assert os.path.basename(f) in ("application.yaml", "values.yaml"), f"{f}: move it to manifests/"
 PY
 }

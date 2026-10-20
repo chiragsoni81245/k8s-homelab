@@ -1,0 +1,26 @@
+# Filebeat: ships every pod's logs to VictoriaLogs (vlsingle in the victoria-metrics app). Plain manifests in
+# manifests/, based on Elastic's deploy/kubernetes/filebeat-kubernetes.yaml (Elastic's Helm charts are archived).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: filebeat
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"   # after victoria-metrics (VictoriaLogs)
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  source:
+    repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
+    targetRevision: main # homelab-revision
+    path: gitops/apps/observability/filebeat/manifests
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

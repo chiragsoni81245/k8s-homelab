@@ -1,0 +1,14 @@
+# Claims persistentvolume-jellyfin-media.yaml (volumeName); used by values.yaml persistence.media.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-media
+  namespace: jellyfin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-data
+  volumeName: jellyfin-media
+  resources:
+    requests:
+      storage: 800Gi

@@ -17,9 +17,9 @@ TP-Link/NetBird DNS override. To move the API to another node later, change that
 `k8sServiceHost` in `gitops/apps/platform/cilium/values.yaml` must be the same name (setup.sh checks).
 
 ## LoadBalancer IPs (Cilium LB-IPAM + L2 announcements)
-`gitops/apps/platform/cilium/lb-ippool.yaml` gives Cilium the range. A Service of `type: LoadBalancer` gets an IP from it;
+`gitops/apps/platform/cilium/manifests/ciliumloadbalancerippool-homelab.yaml` gives Cilium the range. A Service of `type: LoadBalancer` gets an IP from it;
 one node answers ARP for that IP (leader election), so any LAN device can reach it. Envoy Gateway's Service is pinned to
-`192.168.0.200` (annotation `lbipam.cilium.io/ips` in `gateway.yaml`). Point DNS names (`*.home...`) at that IP and route
+`192.168.0.200` (annotation `lbipam.cilium.io/ips` in `envoy-gateway/manifests/envoyproxy-homelab.yaml`). Point DNS names (`*.home...`) at that IP and route
 with `HTTPRoute`s.
 
 ## NetBird (host-level)
@@ -31,7 +31,7 @@ Reaching LoadBalancer IPs (e.g. `192.168.0.200`) over NetBird:
   traffic before NetBird's forward ACL (`sudo nft list table ip netbird`, chain `netbird-rt-fwd`) and it was silently lost.
   Now the routing peer forwards it normally: NetBird policy -> masquerade -> LAN -> the node announcing the LB IP.
 - The routing peer must **not** be the node announcing the LB IP (a node can't ARP-resolve its own announced IP).
-  So L2 announcements are pinned to the Asus (`l2-announcement.yaml`, `homelab/storage=media`) and the Dell is the routing
+  So L2 announcements are pinned to the Asus (`cilium/manifests/ciliuml2announcementpolicy-homelab.yaml`, `homelab/storage=media`) and the Dell is the routing
   peer - don't make the Asus a routing peer for the LB IPs. Check the holder: `kubectl -n kube-system get lease | grep l2announce`.
 ```
 laptop -WireGuard-> Dell wt0 -NetBird policy + masquerade-> enp5s0 -ARP .200-> Asus -Cilium-> Envoy (Asus)

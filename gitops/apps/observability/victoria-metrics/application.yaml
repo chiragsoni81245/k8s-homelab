@@ -24,10 +24,8 @@ spec:
       ref: values
     - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
       targetRevision: main # homelab-revision
-      path: gitops/apps/observability/victoria-metrics
-      # Cilium/Envoy scrapes, add-on alerts, routes
-      directory:
-        include: '{scrapes,rules,httproute}.yaml'
+      path: gitops/apps/observability/victoria-metrics/manifests
+      # plain manifests: Cilium/Envoy scrapes, add-on alerts, routes
   syncPolicy:
     automated:
       prune: true
