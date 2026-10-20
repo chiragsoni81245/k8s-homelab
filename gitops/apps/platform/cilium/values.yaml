@@ -3,6 +3,8 @@
 k8sServiceHost: k8s-api.homelab.chiragsoni.org
 k8sServicePort: 6443
 kubeProxyReplacement: true
+# Restart the agents when cilium-config changes; otherwise edits here (e.g. devices) only apply after a manual restart.
+rollOutCiliumPods: true
 # Only the LAN NICs - NOT NetBird's wt0 (auto-detection picks it). With Cilium's eBPF on wt0, LoadBalancer-IP traffic
 # from NetBird was taken by Cilium before NetBird's forward ACL and silently lost. See docs/networking.md.
 devices: "en+,eth+"
