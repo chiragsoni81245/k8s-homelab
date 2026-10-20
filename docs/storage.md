@@ -10,7 +10,8 @@ There is no shared "data" volume. Each app declares exactly the folder(s) it nee
 ```
 /DATA/Media                    -> Jellyfin            (apps/workloads/jellyfin/manifests: persistentvolume-* + persistentvolumeclaim-*)
 /DATA/AppData/jellyfin-k8s     -> Jellyfin config      (same files)
-/DATA/Downloads/Torrent        -> Transmission         (its own app, same pattern, when you add it)
+/DATA/Downloads/Torrent        -> Transmission         (apps/workloads/transmission/manifests, same pattern)
+/DATA/AppData/transmission-k8s -> Transmission config  (same files)
 ```
 A PV for a new app (copy `apps/workloads/jellyfin/manifests/persistentvolume-jellyfin-media.yaml`):
 ```yaml

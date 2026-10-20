@@ -11,4 +11,4 @@ spec:
   volumeName: jellyfin-media
   resources:
     requests:
-      storage: 800Gi
+      storage: 500Gi

@@ -11,6 +11,12 @@ configs:
       type: helm
       url: docker.io/envoyproxy
       enableOCI: "true"
+    # Transmission chart (apps/workloads/transmission), OCI on GitHub Container Registry (public, no credentials)
+    lexfrei-oci:
+      name: lexfrei
+      type: helm
+      url: ghcr.io/lexfrei/charts
+      enableOCI: "true"
 dex:
   enabled: false
 notifications:

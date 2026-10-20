@@ -1,0 +1,50 @@
+# Transmission on the Asus. Chart: https://github.com/lexfrei/charts (linuxserver/transmission image)
+#
+# Volumes (declared in manifests/, both on the /DATA partition):
+#   /downloads <- /DATA/Downloads/Torrent             finished + incomplete torrents
+#   /config    <- /DATA/AppData/transmission-k8s      settings.json, torrent list/resume data (survives rebuilds)
+#
+# ONE-TIME, on the Asus (local PVs need the folders to exist; owned by the user below):
+#   sudo mkdir -p /DATA/Downloads/Torrent /DATA/AppData/transmission-k8s
+#   sudo chown 1000:1000 /DATA/AppData/transmission-k8s      # and check /DATA/Downloads/Torrent: stat -c '%u:%g'
+#
+# Web UI: https://transmission.chiragsoni.org (route in manifests/). NO authentication (USER/PASS unset):
+# reachable from the LAN and NetBird only - keep it that way.
+
+env:
+  # Run as the owner of your files. CHECK: `stat -c '%u:%g' /DATA/Downloads/Torrent` on the Asus.
+  PUID: "1000"
+  PGID: "1000"
+  TZ: Asia/Kolkata
+  # Transmission rejects requests whose Host header isn't whitelisted (DNS-rebinding protection)
+  HOST_WHITELIST: transmission.chiragsoni.org
+
+# No fsGroup: it would make the kubelet chown the whole downloads folder recursively on every start
+podSecurityContext:
+  fsGroup: null
+
+# Pinned to the Asus (where /DATA is); the PVs' nodeAffinity says the same
+nodeSelector:
+  homelab/storage: media
+
+persistence:
+  config:
+    existingClaim: transmission-config
+  downloads:
+    type: pvc                     # required by the chart with existingClaim
+    existingClaim: transmission-downloads
+
+service:
+  torrent:
+    # No LoadBalancer for the peer port: nothing is port-forwarded from the internet (docs/networking.md), so it
+    # would only take a LAN IP from the Cilium pool. Downloads work outbound; enable + port-forward for more peers.
+    enabled: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  # Asus has 8GB; no CPU limit so hashing/verifying isn't throttled
+  limits:
+    cpu: null
+    memory: 512Mi

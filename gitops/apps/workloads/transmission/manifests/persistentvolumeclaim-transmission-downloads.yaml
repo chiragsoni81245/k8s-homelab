@@ -1,0 +1,14 @@
+# Claims persistentvolume-transmission-downloads.yaml (volumeName); used by values.yaml persistence.downloads.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: transmission-downloads
+  namespace: transmission
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-data
+  volumeName: transmission-downloads
+  resources:
+    requests:
+      storage: 100Gi

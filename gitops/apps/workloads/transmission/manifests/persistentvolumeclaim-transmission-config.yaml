@@ -1,0 +1,14 @@
+# Claims persistentvolume-transmission-config.yaml (volumeName); used by values.yaml persistence.config.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: transmission-config
+  namespace: transmission
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-data
+  volumeName: transmission-config
+  resources:
+    requests:
+      storage: 100Mi
