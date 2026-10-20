@@ -33,3 +33,7 @@ parentRefs:
 hostnames:
   - myapp.chiragsoni.org
 ```
+**HTTPS only, enforced by the Gateway** (nothing to add per route). The `http` listener (port 80) accepts routes from
+`envoy-gateway-system` only, so app routes attach to `https` alone; the single route on port 80 (`https-redirect` in
+`gateway.yaml`) answers every plain-HTTP request with a 301 to `https://<same host and path>`.
+Check: `curl -sI http://jellyfin.chiragsoni.org/` -> `301` with `location: https://jellyfin.chiragsoni.org/`.

@@ -25,5 +25,10 @@ operator:
   prometheus:
     enabled: true           # operator metrics on :9963 (chart default, spelled out)
     metricsService: true    # headless Service cilium-operator for the scrape
+# No Cilium L7 proxy: Envoy Gateway is the ingress, and there are no L7 network policies. Saves the cilium-envoy
+# DaemonSet. Re-enable both for L7 CiliumNetworkPolicies or Hubble L7 visibility.
+envoy:
+  enabled: false
+l7Proxy: false
 hubble:
   enabled: false            # keep the 8GB Asus light; enable later via values
