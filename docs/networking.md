@@ -20,7 +20,8 @@ TP-Link/NetBird DNS override. To move the API to another node later, change that
 `gitops/apps/platform/cilium/manifests/ciliumloadbalancerippool-homelab.yaml` gives Cilium the range. A Service of `type: LoadBalancer` gets an IP from it;
 one node answers ARP for that IP (leader election), so any LAN device can reach it. Envoy Gateway's Service is pinned to
 `192.168.0.200` (annotation `lbipam.cilium.io/ips` in `envoy-gateway/manifests/envoyproxy-homelab.yaml`). Point DNS names (`*.home...`) at that IP and route
-with `HTTPRoute`s.
+with `HTTPRoute`s. Non-HTTP services get their own fixed IP from the pool instead: Samba is `192.168.0.201`
+(`workloads/samba/manifests/service-samba.yaml`).
 
 ## NetBird (host-level)
 `scripts/70-netbird.sh` installs the agent on the node OS (works even if Kubernetes is down). In the NetBird console:

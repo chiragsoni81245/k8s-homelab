@@ -1,0 +1,56 @@
+# Samba users, groups and shares (read by deployment-samba.yaml via envFrom; the image builds smb.conf from these at
+# every start, so nothing is created on the Asus itself). Passwords live in the hand-made Secret samba-users.
+#
+# AFTER EDITING THIS FILE: bump `homelab/config-revision` in deployment-samba.yaml in the same commit - a changed
+# ConfigMap alone does not restart the pod.
+#
+#   Add a person:   1. password into the Secret (all keys - this replaces it):
+#                      kubectl -n samba create secret generic samba-users --from-literal=ACCOUNT_chirag='...' \
+#                        --from-literal=ACCOUNT_<name>='...' --dry-run=client -o yaml | kubectl apply -f -
+#                   2. GROUPS_<name>: "<group>,..." below (optional), push.
+#   Add a group:    GROUP_<name>: "<gid>"; use it in a share as @<name>.
+#   Add a share:    SAMBA_VOLUME_CONFIG_<id> = one smb.conf section, ";" separates the lines.
+#                   valid users = who may connect (read); write list = who may also write; others get nothing.
+#                   Shares for other people: add `wide links = no` (the image's global config follows symlinks
+#                   anywhere, so a symlink inside the share could otherwise expose folders outside it).
+#   Password only:  kubectl -n samba rollout restart deployment/samba
+# User names are lowercase.
+#
+# Files on disk: every share has `force user = chirag` (uid 1000, the owner of /DATA and the user Jellyfin and
+# Transmission run as). Whoever logs in, new files belong to 1000 and the apps can read them; Samba logins and groups
+# only decide WHO may read/write a share.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: samba-config
+  namespace: samba
+data:
+  SAMBA_CONF_SERVER_STRING: homelab
+  # --- users (passwords: Secret samba-users, key ACCOUNT_<name>) ---
+  UID_chirag: "1000"
+  # --- groups ---
+  GROUP_family: "2001"
+  # Example member (needs ACCOUNT_alice in the Secret):
+  # GROUPS_alice: family
+  # --- shares ---
+  # Whole partition: only chirag, read/write
+  SAMBA_VOLUME_CONFIG_data: >-
+    [DATA];
+    path = /shares/data;
+    valid users = chirag;
+    write list = chirag;
+    read only = yes;
+    force user = chirag;
+    create mask = 0664;
+    directory mask = 0775
+  # Media: chirag read/write, @family read-only
+  SAMBA_VOLUME_CONFIG_media: >-
+    [Media];
+    path = /shares/data/Media;
+    valid users = chirag @family;
+    write list = chirag;
+    read only = yes;
+    force user = chirag;
+    create mask = 0664;
+    directory mask = 0775;
+    wide links = no

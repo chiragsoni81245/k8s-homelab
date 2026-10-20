@@ -1,0 +1,63 @@
+# Samba (image: https://github.com/ServerContainers/samba, smbd only) sharing /DATA on the Asus.
+# Users, groups and shares: configmap-samba-config.yaml. Passwords: Secret samba-users (see application.yaml).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: samba
+  namespace: samba
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: samba
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: samba
+      annotations:
+        # Bump with every change to configmap-samba-config.yaml: env from a ConfigMap is read only at pod start,
+        # so the new pod template is what makes Argo roll the pod.
+        homelab/config-revision: "1"
+    spec:
+      # The Asus has /DATA; it also announces the LB IPs (cilium/manifests/ciliuml2announcementpolicy-homelab.yaml)
+      nodeSelector:
+        homelab/storage: media
+      containers:
+        - name: samba
+          image: ghcr.io/servercontainers/samba:smbd-only-a3.24.2-s4.23.8-r0
+          envFrom:
+            - configMapRef:
+                name: samba-config  # users, groups, shares
+            - secretRef:
+                name: samba-users   # ACCOUNT_<name>=<password> per user, created by hand (see application.yaml)
+          ports:
+            - name: smb
+              containerPort: 445
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: smb
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: smb
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /shares/data
+      volumes:
+        # hostPath, not a local-data PV: it shares the partition root, and those PVs must point at folders under /DATA/.
+        # type Directory = the pod won't start if /DATA doesn't exist (same "is /DATA mounted?" caveat as the PVs).
+        - name: data
+          hostPath:
+            path: /DATA
+            type: Directory

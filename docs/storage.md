@@ -13,6 +13,9 @@ There is no shared "data" volume. Each app declares exactly the folder(s) it nee
 /DATA/Downloads/Torrent        -> Transmission         (apps/workloads/transmission/manifests, same pattern)
 /DATA/AppData/transmission-k8s -> Transmission config  (same files)
 ```
+Exception: **Samba** (`apps/workloads/samba`) shares the whole partition over SMB (`smb://192.168.0.201/<share>`), so it
+mounts `/DATA` with a `hostPath` instead of a PV. Its users, groups and per-share access are env vars in
+`manifests/configmap-samba-config.yaml` (passwords in the hand-made Secret `samba-users`); nothing is created on the host.
 A PV for a new app (copy `apps/workloads/jellyfin/manifests/persistentvolume-jellyfin-media.yaml`):
 ```yaml
 apiVersion: v1

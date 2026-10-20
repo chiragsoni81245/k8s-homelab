@@ -1,0 +1,19 @@
+# SMB on its own LAN IP from the Cilium pool (not Envoy Gateway: SMB isn't HTTP). Connect: smb://192.168.0.201/<share>
+# Reachable over NetBird like 192.168.0.200 (docs/networking.md).
+apiVersion: v1
+kind: Service
+metadata:
+  name: samba
+  namespace: samba
+  annotations:
+    lbipam.cilium.io/ips: 192.168.0.201
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local   # real client IPs in the Samba logs; the pod runs on the Asus, which announces the IP
+  selector:
+    app.kubernetes.io/name: samba
+  ports:
+    - name: smb
+      port: 445
+      targetPort: smb
+      protocol: TCP

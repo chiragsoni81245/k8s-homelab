@@ -1,0 +1,32 @@
+# Samba file server for /DATA on the Asus (smb://192.168.0.201/<share>). Path-only Application: manifests/ holds the
+# config (users, groups, shares), the Deployment and the LoadBalancer Service.
+#
+# ONE-TIME, before the first sync (passwords never stored in git; one key per user, ACCOUNT_<username>):
+#   kubectl create namespace samba
+#   kubectl -n samba create secret generic samba-users --from-literal=ACCOUNT_chirag='<password>'
+# Changing only a password does not restart the pod: kubectl -n samba rollout restart deployment/samba
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: samba
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: samba
+  source:
+    repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
+    targetRevision: main # homelab-revision
+    path: gitops/apps/workloads/samba/manifests
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
