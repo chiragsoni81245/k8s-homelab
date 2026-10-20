@@ -11,4 +11,4 @@ spec:
   volumeName: jellyfin-config
   resources:
     requests:
-      storage: 1Gi
+      storage: 10Gi
