@@ -18,6 +18,11 @@ env:
   TZ: Asia/Kolkata
   # Transmission rejects requests whose Host header isn't whitelisted (DNS-rebinding protection)
   HOST_WHITELIST: transmission.chiragsoni.org
+  # ...and requests from addresses that aren't in its IP whitelist (default: 127.0.0.1 only). Envoy Gateway forwards
+  # every request from its own POD address, so the pod network must be allowed. 10.244.*.* = POD_CIDR 10.244.0.0/16
+  # (the setup default); if you changed POD_CIDR, change this to match. The UI is still only reachable from the
+  # LAN/NetBird through the Gateway; this just lets the Gateway's proxy talk to Transmission.
+  WHITELIST: "10.244.*.*"
 
 # No fsGroup: it would make the kubelet chown the whole downloads folder recursively on every start
 podSecurityContext:
