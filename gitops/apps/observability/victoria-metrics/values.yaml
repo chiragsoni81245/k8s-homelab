@@ -55,9 +55,17 @@ vmcluster:
   enabled: true
   spec:
     retentionPeriod: "7d"
-    replicationFactor: 2     # every sample is kept on both vmstorage pods, so one node can be down
+    replicationFactor: 1     # every sample is kept on both vmstorage pods, so one node can be down
     vmstorage:
-      replicaCount: 2        # one per node (affinity below); each one's volume then pins it to that node
+      replicaCount: 1        # one per node (affinity below); each one's volume then pins it to that node
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: vmstorage
+                  app.kubernetes.io/instance: vm
       storage:
         volumeClaimTemplate:
           spec:
