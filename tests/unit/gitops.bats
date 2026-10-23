@@ -158,6 +158,7 @@ for f in glob.glob(root + "/workloads/*/values.yaml"):
 PY
 }
 
+<<<<<<< Updated upstream
 @test "plain manifests: one resource per file, named <kind>-<name>.yaml, under <app>/manifests/" {
   python3 - "$ROOT" <<'PY'
 import sys, os, glob, yaml
@@ -174,4 +175,10 @@ for f in files:
 for f in glob.glob(root + "/*/*/*.yaml"):
     assert os.path.basename(f) in ("application.yaml", "values.yaml"), f"{f}: move it to manifests/"
 PY
+=======
+@test "nothing in the repo assumes node names or NIC names" {
+  # no role-based hostnames in scripts, no NIC-name patterns in the L2 policy
+  ! grep -rniE "\bdell\b|\basus\b" "$ROOT/scripts" "$ROOT/lib" "$ROOT/setup.sh" "$ROOT/update.sh" "$ROOT/install.sh" "$ROOT/tools"
+  ! grep -qE '^[[:space:]]+interfaces:' "$ROOT/gitops/apps/platform/cilium/l2-announcement.yaml"
+>>>>>>> Stashed changes
 }

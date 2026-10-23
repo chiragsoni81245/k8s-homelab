@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# 35-data-mount.sh - sourced by setup.sh (worker only)
+# 35-data-mount.sh - sourced by setup.sh (either role; asks, default No)
 # What : mount an EXISTING data partition at $DATA_MOUNT (default /DATA), read-write.
 #        It NEVER formats anything: a device without a filesystem is refused.
-# Sets : DATA_MOUNTED (yes|no), DATA_PUID, DATA_PGID (saved to config.env)
+# Sets : DATA_MOUNTED (yes|no), DATA_PUID, DATA_PGID (saved to config.env). A mounted $DATA_MOUNT is what
+#        puts the homelab/storage=media label on the node (see node_labels in lib/common.sh).
 
 DATA_MOUNTED=no
 

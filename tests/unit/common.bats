@@ -141,3 +141,53 @@ YAML
   has_wireless_hardware() { return 1; }; ! wireless_should_be_disabled
   has_wireless_hardware() { return 0; };   wireless_should_be_disabled
 }
+
+# ---- disk detection and node labels (findmnt/lsblk are stubbed) ----
+stub_root_disks() {  # args: lines like "part 1" "disk 1" -> what `lsblk -s -n -o TYPE,ROTA <root>` would print
+  STUB_LSBLK="$(printf '%s\n' "$@")"
+  findmnt() { echo "/dev/mapper/ubuntu--vg-ubuntu--lv"; }
+  lsblk()   { printf '%s\n' "$STUB_LSBLK"; }
+}
+
+@test "disk_kind: HDD under LVM is detected as hdd (not guessed as ssd)" {
+  stub_root_disks "lvm 1" "part 1" "disk 1"
+  [ "$(disk_kind)" = hdd ]
+}
+@test "disk_kind: NVMe/SSD is detected as ssd" {
+  stub_root_disks "part 0" "disk 0"
+  [ "$(disk_kind)" = ssd ]
+}
+@test "disk_kind: any rotational disk under the root makes it hdd" {
+  stub_root_disks "lvm 0" "disk 0" "disk 1"
+  [ "$(disk_kind)" = hdd ]
+}
+@test "disk_kind prints nothing when it cannot tell" {
+  stub_root_disks "lvm 0" "part 0"          # no whole-disk line
+  [ -z "$(disk_kind)" ]
+  findmnt() { return 1; }
+  [ -z "$(disk_kind)" ]
+}
+
+@test "node_labels adds the disk label only when detected" {
+  has_data_mount() { return 1; }
+  disk_kind() { echo hdd; }
+  [ "$(node_labels worker)" = "homelab/role=worker,homelab/disk=hdd" ]
+  disk_kind() { return 0; }
+  [ "$(node_labels master)" = "homelab/role=master" ]
+}
+@test "node_labels adds the storage label only when the data partition is mounted" {
+  disk_kind() { echo ssd; }
+  has_data_mount() { return 0; }
+  [ "$(node_labels master)" = "homelab/role=master,homelab/disk=ssd,homelab/storage=media" ]
+  has_data_mount() { return 1; }
+  [ "$(node_labels master)" = "homelab/role=master,homelab/disk=ssd" ]
+}
+@test "node_labels appends extra labels" {
+  disk_kind() { echo ssd; }
+  has_data_mount() { return 1; }
+  [ "$(node_labels worker team=a)" = "homelab/role=worker,homelab/disk=ssd,team=a" ]
+}
+@test "has_data_mount follows the real mount state of DATA_MOUNT" {
+  DATA_MOUNT=/proc;  has_data_mount          # /proc is a mount point
+  DATA_MOUNT="$TMP"; ! has_data_mount        # a plain temp dir is not
+}

@@ -27,15 +27,8 @@ ask_token_and_ca_hash() {
   fi
 }
 
-node_labels() {
-  local labels
-  labels="homelab/role=worker,homelab/disk=$(disk_kind)"
-  [[ "${DATA_MOUNTED:-no}" == yes ]] && labels+=",homelab/storage=media"
-  echo "$labels"
-}
-
 run_kubeadm_join() {
-  NODE_LABELS="$(node_labels)"
+  NODE_LABELS="$(node_labels worker)"
   export CONTROL_PLANE_ENDPOINT JOIN_TOKEN CA_VERIFY NODE_NAME NODE_IP NODE_LABELS
   install_rendered kubernetes/kubeadm-join.yaml /etc/kubernetes/kubeadm-join.yaml 600
   step "kubeadm join"

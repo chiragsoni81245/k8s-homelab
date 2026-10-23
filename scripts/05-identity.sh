@@ -10,7 +10,7 @@ choose_node_name() {
 
   if [[ -z "${NODE_NAME:-}" ]]; then
     NODE_NAME="$default"
-    [[ -n "$NODE_NAME" ]] || prompt NODE_NAME "Hostname for this node (unique, lowercase)" "$([[ $ROLE == master ]] && echo dell || echo asus)"
+    [[ -n "$NODE_NAME" ]] || prompt NODE_NAME "Hostname for this node (unique, lowercase; 'ubuntu'/'localhost' are too generic)"
   fi
   NODE_NAME="${NODE_NAME,,}"
   [[ "$NODE_NAME" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]] || die "Invalid hostname '$NODE_NAME'."

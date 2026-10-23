@@ -2,7 +2,7 @@
 
 | StorageClass | Type | Where data lives | Use for |
 |---|---|---|---|
-| `local-data` | static local PVs, **declared by each app** | folders on the Asus `/DATA` partition (existing, never formatted) | media, downloads, app config you want to survive rebuilds |
+| `local-data` | static local PVs, **declared by each app** | folders on the node that has the `/DATA` partition (existing, never formatted) | media, downloads, app config you want to survive rebuilds |
 | `local-path` | dynamic (Rancher local-path-provisioner) | `/var/lib/local-path` on the node the pod lands on | small disposable volumes |
 
 ## Pattern: every app brings its own PV + PVC + pod
@@ -41,7 +41,7 @@ spec:
                 - media
 ```
 plus a PVC in the app's namespace with `volumeName: transmission-downloads`. The PV's `nodeAffinity` makes the scheduler
-put any pod using the claim onto the Asus automatically. `tests/unit/gitops.bats` enforces this pattern (class, Retain, pinned, under `/DATA/`, has a claim).
+put any pod using the claim onto the node that has `/DATA` automatically. `tests/unit/gitops.bats` enforces this pattern (class, Retain, pinned, under `/DATA/`, has a claim).
 
 - **Folders must exist first.** A `local` PV does not create its folder. If it's missing, the pod stays `ContainerCreating`
   with a "path does not exist" event. Create it once (`sudo mkdir -p ...`, `chown` to the app's user).

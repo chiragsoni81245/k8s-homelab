@@ -19,15 +19,16 @@ check_os() {
 
 check_resources() {
   local mem_mb; mem_mb=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
-  (( $(nproc) >= 2 )) || die "kubeadm needs >= 2 CPUs (found $(nproc))."
-  (( mem_mb >= 1700 )) || die "kubeadm needs >= ~2GB RAM (found ${mem_mb}MB)."
-  log "CPU: $(nproc), RAM: ${mem_mb}MB, arch: $ARCH, disk: $(disk_kind)"
+  # kubeadm enforces its own minimums; we only warn so a borderline machine is not blocked early
+  (( $(nproc) >= 2 )) || warn "kubeadm wants >= 2 CPUs (found $(nproc))."
+  (( mem_mb >= 1700 )) || warn "kubeadm wants >= ~2GB RAM (found ${mem_mb}MB)."
+  log "CPU: $(nproc), RAM: ${mem_mb}MB, arch: $ARCH, disk: $(disk_kind | grep . || echo unknown)"
 }
 
 # Pick the NIC and confirm the (DHCP-reserved) IP this node uses.
 detect_network() {
   DEFAULT_IF="$(ip -4 route show default | awk '{print $5; exit}')"
-  [[ -n "$DEFAULT_IF" ]] || die "No default route. Connect the network first."
+  [[ -n "$DEFAULT_IF" ]] || warn "No default route yet; choosing the interface from what is available."
 
   if [[ -z "${NODE_IP:-}" ]]; then
     choose_nic
@@ -46,7 +47,7 @@ detect_network() {
 }
 
 check_internet() {
-  curl -fsS --max-time 15 -o /dev/null https://pkgs.k8s.io/ || die "No internet access to pkgs.k8s.io."
+  curl -fsS --max-time 15 -o /dev/null https://pkgs.k8s.io/ || warn "Cannot reach pkgs.k8s.io; package installs will fail unless you use a mirror."
 }
 
 install_base_tools

@@ -29,7 +29,7 @@ prepare_secrets_encryption() {
 }
 
 run_kubeadm_init() {
-  NODE_LABELS="homelab/role=master,homelab/disk=$(disk_kind)"
+  NODE_LABELS="$(node_labels master)"
   export MASTER_IP NODE_NAME NODE_LABELS K8S_VERSION CONTROL_PLANE_ENDPOINT POD_CIDR SERVICE_CIDR APISERVER_EXTRA
   install_rendered kubernetes/kubeadm-init.yaml /etc/kubernetes/kubeadm-config.yaml 600
   step "kubeadm init"

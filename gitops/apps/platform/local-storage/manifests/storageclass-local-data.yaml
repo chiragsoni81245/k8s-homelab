@@ -1,4 +1,4 @@
-# Static local volumes on the Asus /DATA partition. Apps bring their own PV (path + node pin) and PVC.
+# Static local volumes on the node that has the /DATA partition. Apps bring their own PV (path + node pin) and PVC.
 # WaitForFirstConsumer: binding waits for a pod, so the scheduler honours the PV's node affinity.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass

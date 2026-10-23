@@ -141,13 +141,34 @@ detect_arch() {
   esac; export ARCH
 }
 
-# disk_kind -> ssd|hdd for the device backing /
+# disk_kind -> "ssd" | "hdd" | nothing (when it cannot be determined). Looks at the real disk(s) under the root
+# filesystem, through partitions and LVM/RAID. Any rotational disk makes it "hdd". Never guesses.
 disk_kind() {
-  local src dev rot
-  src="$(findmnt -no SOURCE / | sed 's/\[.*//')"
-  dev="$(lsblk -no PKNAME "$src" 2>/dev/null | head -n1)"; dev="${dev:-$(basename "$src")}"
-  rot="$(cat "/sys/block/$dev/queue/rotational" 2>/dev/null || echo 0)"
-  [[ "$rot" == 1 ]] && echo hdd || echo ssd
+  local src type rota any_hdd=0 any_ssd=0
+  src="$(findmnt -no SOURCE / 2>/dev/null | sed 's/\[.*//')"
+  [[ -n "$src" ]] || return 0
+  while read -r type rota; do
+    [[ "$type" == disk ]] || continue
+    if [[ "$rota" == 1 ]]; then any_hdd=1; elif [[ "$rota" == 0 ]]; then any_ssd=1; fi
+  done < <(lsblk -s -n -o TYPE,ROTA "$src" 2>/dev/null)
+  if (( any_hdd )); then echo hdd; elif (( any_ssd )); then echo ssd; fi
+  return 0
+}
+
+# has_data_mount -> 0 when the data partition is mounted on this node (DATA_MOUNT, default /DATA)
+has_data_mount() { mountpoint -q "${DATA_MOUNT:-/DATA}" 2>/dev/null; }
+
+# node_labels ROLE [EXTRA_LABEL...] -> "homelab/role=ROLE[,homelab/disk=KIND][,homelab/storage=media][,EXTRA...]"
+# Everything except the role is detected on this machine; whatever cannot be detected is simply left off
+# (add it yourself later with `kubectl label node <name> <key>=<value>`).
+node_labels() {
+  local labels="homelab/role=$1" disk extra
+  shift
+  disk="$(disk_kind)"
+  [[ -z "$disk" ]] || labels+=",homelab/disk=$disk"
+  if has_data_mount; then labels+=",homelab/storage=media"; fi
+  for extra in "$@"; do labels+=",$extra"; done
+  echo "$labels"
 }
 
 # has_wireless_hardware -> 0 if this machine has a Wi-Fi or Bluetooth radio

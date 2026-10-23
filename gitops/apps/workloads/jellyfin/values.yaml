@@ -1,4 +1,4 @@
-# Jellyfin on the Asus. Chart: https://github.com/jellyfin/jellyfin-helm
+# Jellyfin on the node that has /DATA. Chart: https://github.com/jellyfin/jellyfin-helm
 #
 # Volumes (declared in manifests/persistentvolume*-jellyfin-*.yaml, both on the /DATA partition):
 #   /media   <- /DATA/Media                    your libraries: add /media/Movies, /media/TV Shows ... in Jellyfin
@@ -6,7 +6,7 @@
 #   /cache   emptyDir                          disposable
 # A NEW config folder is used, so the old Docker config in /DATA/AppData/jellyfin is never touched or migrated.
 #
-# ONE-TIME, on the Asus (local PVs need the folder to exist; the pod owns it as the user below):
+# ONE-TIME, on the node that has /DATA (local PVs need the folder to exist; the pod owns it as the user below):
 #   sudo mkdir -p /DATA/AppData/jellyfin-k8s && sudo chown 1000:1000 /DATA/AppData/jellyfin-k8s
 
 # Run as the owner of your files. CHECK THESE NUMBERS: `stat -c '%u:%g' /DATA/Media`.
@@ -38,11 +38,10 @@ resources:
   requests:
     cpu: 250m
     memory: 512Mi
-  # Asus has 8GB total; no CPU limit so transcodes can use the cores
-  limits:
-    memory: 3Gi
+  # No limits on purpose (no CPU limit lets transcodes use the cores). On a small node, add e.g.
+  #   limits: {memory: 3Gi}   (written as a block) so Jellyfin cannot starve everything else.
 
-# No nodeSelector needed: the claims are pinned to the Asus by the PVs' nodeAffinity.
+# No nodeSelector needed: the claims are pinned to the node with /DATA by the PVs' nodeAffinity.
 
 # Reach it through Envoy Gateway on the LAN IP 192.168.0.200 (see docs/networking.md):
 #   point jellyfin.chiragsoni.org at 192.168.0.200 (DNS record or /etc/hosts), then open https://jellyfin.chiragsoni.org

@@ -2,8 +2,8 @@
 
 ```
 Internet - ISP router 192.168.1.0/24 - TP-Link (WAN) - TP-Link LAN 192.168.0.0/24
-                                                         |- Dell  (master) 192.168.0.160
-                                                         |- Asus  (worker) 192.168.0.161
+                                                         |- master node   e.g. 192.168.0.160
+                                                         |- worker node   e.g. 192.168.0.161
                                                          '- LB pool       192.168.0.200-220
 ```
 - Nodes use **DHCP reservations** on the TP-Link. Exclude `.200-.220` from its DHCP pool.

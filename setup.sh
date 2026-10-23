@@ -52,12 +52,13 @@ run 20-system-prep.sh
 run 30-container-runtime.sh
 run 40-kube-packages.sh
 
+run 35-data-mount.sh      # any node may have a data partition; skipped unless you say so
+
 if [[ "$ROLE" == master ]]; then
   run 50-master-init.sh
   run 55-master-bootstrap.sh
   run 65-label-nodes.sh
 else
-  run 35-data-mount.sh
   run 60-worker-join.sh
 fi
 

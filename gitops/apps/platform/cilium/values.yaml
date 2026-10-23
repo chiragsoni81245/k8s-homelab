@@ -31,4 +31,4 @@ envoy:
   enabled: false
 l7Proxy: false
 hubble:
-  enabled: false            # keep the 8GB Asus light; enable later via values
+  enabled: false            # off by default to stay light; enable later via values
