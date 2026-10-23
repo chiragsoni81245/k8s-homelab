@@ -9,6 +9,5 @@ spec:
     matchLabels:
       homelab/storage: media
   loadBalancerIPs: true
-  interfaces:
-    - ^en.*
-    - ^eth.*
+  # No `interfaces` list on purpose: every interface of the announcing node answers, so nothing here
+  # depends on how the NICs are named (enp0s3, eno1, eth0, ...).

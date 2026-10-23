@@ -24,12 +24,12 @@ node-exporter                          node-exporter
 - Retention **7 days**. Check real usage: `sudo du -sh /var/lib/local-path/*vmstorage*` on each node.
 
 ## First install
-1. Create the Grafana admin secret (never in git):
+1. Create the Grafana admin secret (never in git) with the helper; an empty password prompt generates one and shows it once:
    ```bash
-   kubectl create namespace monitoring
-   kubectl -n monitoring create secret generic grafana-admin \
-     --from-literal=admin-user=admin --from-literal=admin-password="$(openssl rand -base64 24)"
+   sudo tools/create-grafana-secret.sh
    ```
+   (Manual equivalent: `kubectl create namespace monitoring`, then `kubectl -n monitoring create secret generic grafana-admin
+   --from-literal=admin-user=admin --from-literal=admin-password=<password>`.)
 2. Push. Argo syncs the `cilium` app (metrics port on; the agents restart one node at a time) and creates `victoria-metrics`.
 3. Point `grafana.` and `alertmanager.chiragsoni.org` at `192.168.0.200` (like Jellyfin, see [networking](networking.md)).
 4. Check:

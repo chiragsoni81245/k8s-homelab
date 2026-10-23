@@ -1,8 +1,0 @@
-# Answers ARP for LoadBalancer IPs. No `interfaces` list on purpose: every interface of the elected node
-# announces, so nothing here depends on how the NICs are named (enp0s3, eno1, eth0, ...).
-apiVersion: cilium.io/v2alpha1
-kind: CiliumL2AnnouncementPolicy
-metadata:
-  name: homelab
-spec:
-  loadBalancerIPs: true

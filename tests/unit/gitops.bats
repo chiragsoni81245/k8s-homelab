@@ -158,7 +158,6 @@ for f in glob.glob(root + "/workloads/*/values.yaml"):
 PY
 }
 
-<<<<<<< Updated upstream
 @test "plain manifests: one resource per file, named <kind>-<name>.yaml, under <app>/manifests/" {
   python3 - "$ROOT" <<'PY'
 import sys, os, glob, yaml
@@ -175,10 +174,22 @@ for f in files:
 for f in glob.glob(root + "/*/*/*.yaml"):
     assert os.path.basename(f) in ("application.yaml", "values.yaml"), f"{f}: move it to manifests/"
 PY
-=======
+}
+
 @test "nothing in the repo assumes node names or NIC names" {
   # no role-based hostnames in scripts, no NIC-name patterns in the L2 policy
   ! grep -rniE "\bdell\b|\basus\b" "$ROOT/scripts" "$ROOT/lib" "$ROOT/setup.sh" "$ROOT/update.sh" "$ROOT/install.sh" "$ROOT/tools"
-  ! grep -qE '^[[:space:]]+interfaces:' "$ROOT/gitops/apps/platform/cilium/l2-announcement.yaml"
->>>>>>> Stashed changes
+  ! grep -qE '^[[:space:]]+interfaces:' "$ROOT/gitops/apps/platform/cilium/manifests/ciliuml2announcementpolicy-homelab.yaml"
+}
+
+@test "create-samba-user.sh: user name rules and detection from the repo's own ConfigMap" {
+  source "$ROOT/tools/create-samba-user.sh"        # only defines functions when sourced
+  valid_username chirag
+  valid_username alice_2
+  ! valid_username Alice
+  ! valid_username "bad name"
+  ! valid_username ""
+  [ -n "$(configured_users)" ]                      # UID_<name> keys are found in configmap-samba-config.yaml
+  [ "$(default_user)" = "$(configured_users | head -n1)" ]
+  [[ "$(samba_address)" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
 }

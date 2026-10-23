@@ -10,9 +10,7 @@
 # Extra scrapes for Cilium and Envoy Gateway, add-on alerts and routes: manifests/ (one resource per file).
 #
 # ONE-TIME, before the first sync (Grafana admin login, never stored in git):
-#   kubectl create namespace monitoring
-#   kubectl -n monitoring create secret generic grafana-admin \
-#     --from-literal=admin-user=admin --from-literal=admin-password="$(openssl rand -base64 24)"
+#   sudo tools/create-grafana-secret.sh        (creates monitoring/grafana-admin; empty password prompt = generate one)
 
 # Short resource names (vmstorage-vm, vmselect-vm, ...) instead of <release>-victoria-metrics-k8s-stack
 fullnameOverride: vm

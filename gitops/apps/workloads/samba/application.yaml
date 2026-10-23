@@ -4,6 +4,7 @@
 # ONE-TIME, before the first sync (passwords never stored in git; one key per user, ACCOUNT_<username>):
 #   kubectl create namespace samba
 #   kubectl -n samba create secret generic samba-users --from-literal=ACCOUNT_chirag='<password>'
+# or, easier and safe for several users (merges the key, restarts the pod):  sudo tools/create-samba-user.sh
 # Changing only a password does not restart the pod: kubectl -n samba rollout restart deployment/samba
 apiVersion: argoproj.io/v1alpha1
 kind: Application
