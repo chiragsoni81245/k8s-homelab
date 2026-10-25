@@ -4,7 +4,9 @@ kind: GatewayClass
 metadata:
   name: envoy
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    # After the EnvoyProxy (wave 1): in the same wave the class is checked before its parametersRef exists, is marked
+    # InvalidParameters and never re-checked, and Argo then waits on that "failed" class forever.
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   controllerName: gateway.envoyproxy.io/gatewayclass-controller
   parametersRef:

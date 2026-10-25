@@ -6,7 +6,7 @@ metadata:
   name: https-redirect
   namespace: envoy-gateway-system
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"   # after the Gateway class (2), with the Gateway
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io

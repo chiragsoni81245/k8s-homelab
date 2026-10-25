@@ -5,7 +5,7 @@ metadata:
   name: homelab
   namespace: envoy-gateway-system
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"   # after the GatewayClass (2)
 spec:
   gatewayClassName: envoy
   listeners:

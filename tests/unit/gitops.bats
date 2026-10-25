@@ -193,3 +193,17 @@ PY
   [ "$(default_user)" = "$(configured_users | head -n1)" ]
   [[ "$(samba_address)" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
 }
+
+@test "envoy-gateway manifests apply in order: EnvoyProxy -> GatewayClass -> Gateway and routes" {
+  python3 - "$ROOT" <<'PY'
+import sys, glob, yaml
+d = sys.argv[1] + "/gitops/apps/platform/envoy-gateway/manifests/"
+wave = {}
+for f in glob.glob(d + "*.yaml"):
+    o = yaml.safe_load(open(f))
+    wave[o["kind"]] = int(o["metadata"]["annotations"]["argocd.argoproj.io/sync-wave"])
+assert wave["EnvoyProxy"] < wave["GatewayClass"], "GatewayClass must come after the EnvoyProxy it references (race: stuck InvalidParameters)"
+assert wave["GatewayClass"] < wave["Gateway"], "Gateway must come after the GatewayClass"
+assert wave["GatewayClass"] < wave["HTTPRoute"], "routes must come after the GatewayClass"
+PY
+}
