@@ -22,7 +22,10 @@ env:
   # every request from its own POD address, so the pod network must be allowed. 10.244.*.* = POD_CIDR 10.244.0.0/16
   # (the setup default); if you changed POD_CIDR, change this to match. The UI is still only reachable from the
   # LAN/NetBird through the Gateway; this just lets the Gateway's proxy talk to Transmission.
-  WHITELIST: "10.244.*.*"
+  # WHITELIST REPLACES the default list, so loopback must be repeated: the chart's liveness probe runs
+  # `curl http://localhost:9091/...` inside the pod (source 127.0.0.1); without it every probe gets a 403 and the
+  # kubelet kills the container (exit 137, CrashLoopBackOff).
+  WHITELIST: "127.0.0.1,::1,10.244.*.*"
 
 # No fsGroup: it would make the kubelet chown the whole downloads folder recursively on every start
 podSecurityContext:

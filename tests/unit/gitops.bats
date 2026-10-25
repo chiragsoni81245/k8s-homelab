@@ -207,3 +207,13 @@ assert wave["GatewayClass"] < wave["Gateway"], "Gateway must come after the Gate
 assert wave["GatewayClass"] < wave["HTTPRoute"], "routes must come after the GatewayClass"
 PY
 }
+
+@test "transmission WHITELIST keeps loopback (the liveness probe curls localhost) and allows the pod network" {
+  python3 - "$ROOT" <<'PY'
+import sys, yaml
+v = yaml.safe_load(open(sys.argv[1] + "/gitops/apps/workloads/transmission/values.yaml"))
+wl = [x.strip() for x in v["env"]["WHITELIST"].split(",")]
+assert "127.0.0.1" in wl, "liveness probe (localhost) would get 403 -> CrashLoopBackOff"
+assert any(x.startswith("10.244.") for x in wl), "Envoy (pod network) would be rejected"
+PY
+}
