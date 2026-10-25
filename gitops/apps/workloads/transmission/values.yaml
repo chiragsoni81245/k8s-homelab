@@ -28,6 +28,24 @@ env:
 podSecurityContext:
   fsGroup: null
 
+# The image's init scripts start as root and edit /config/settings.json (this is how WHITELIST/HOST_WHITELIST are
+# applied) before dropping to PUID/PGID. The chart drops ALL capabilities, and root without DAC_OVERRIDE cannot
+# write a file owned by someone else, so once /config belongs to 1000 the edits fail with "Permission denied" and
+# Transmission keeps its default whitelist (127.0.0.1 only). DAC_OVERRIDE + FOWNER fix that. A Helm list replaces
+# the chart's default, so the three original capabilities are repeated here.
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+    add:
+      - SETUID
+      - SETGID
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+
 # Pinned to the Asus (where /DATA is); the PVs' nodeAffinity says the same
 nodeSelector:
   homelab/storage: media
