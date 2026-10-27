@@ -1,0 +1,36 @@
+# Values for charts/proton-secrets-operator (see the chart's values.yaml for every option).
+
+image:
+  repository: ghcr.io/chiragsoni81245/proton-secrets-operator
+  tag: "0.1.0"   # pinned; must exist in GHCR (published by the operator repo's release workflow)
+
+# Homelab has few nodes; two replicas with leader election is enough.
+replicaCount: 2
+
+pat:
+  existingSecret: proton-pat   # created by tools/create-proton-pat-secret.sh
+  key: token
+  # The PAT expiry lives in the same Secret (key expires-at, set by tools/create-proton-pat-secret.sh) and drives
+  # the ProtonPATExpiringSoon alert. The key must exist in the Secret; set to "" to disable.
+  expiresAtKey: expires-at
+
+# Bump the pass-cli version here without rebuilding the operator image. Empty = use the bundled one.
+passCli:
+  image:
+    repository: ""
+    tag: ""
+  keyProvider: fs
+
+# Scraping and alert rules are defined in the victoria-metrics app (vmservicescrape-proton-secrets-operator.yaml,
+# vmrule-homelab-addons.yaml), so the chart's own PrometheusRule stays off.
+metrics:
+  enabled: true
+  rules:
+    enabled: false
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

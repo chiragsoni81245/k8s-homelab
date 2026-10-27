@@ -45,3 +45,36 @@ spec:
           annotations:
             summary: 'Cilium on {{ $labels.pod }} drops {{ $value | humanize }} packets/s ({{ $labels.reason }})'
             description: 'Sustained packet drops. Check `kubectl -n kube-system exec ds/cilium -- cilium-dbg monitor --type drop`.'
+    - name: proton-secrets-operator
+      rules:
+        - alert: ProtonSecretSyncFailing
+          # failures with no successful sync at all in the window; a single bad ProtonSecret is shown by ProtonSecretStale
+          expr: |
+            sum(increase(protonsecret_reconcile_total{result!="success"}[15m])) > 0
+            and
+            (sum(increase(protonsecret_reconcile_total{result="success"}[15m])) or vector(0)) == 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: 'ProtonSecrets are failing to sync with Proton Pass'
+            description: 'No successful sync in 15m. Check `kubectl get protonsecret -A`, the operator logs and whether the PAT is valid.'
+        - alert: ProtonSecretStale
+          expr: time() - protonsecret_last_sync_timestamp_seconds > 6 * 3600
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: 'ProtonSecret {{ $labels.namespace }}/{{ $labels.name }} has not synced for 6h'
+            description: 'Run `kubectl -n {{ $labels.namespace }} describe protonsecret {{ $labels.name }}` for the reason.'
+        - alert: ProtonPATExpiringSoon
+          # expires-at in the proton-pat Secret; 0 means unknown/not set and is ignored. Rotate: tools/create-proton-pat-secret.sh
+          expr: |
+            (protonsecret_pat_expiry_timestamp_seconds - time()) < 14 * 86400
+            and
+            protonsecret_pat_expiry_timestamp_seconds > 0
+          labels:
+            severity: critical
+          annotations:
+            summary: 'The Proton Pass personal access token expires in {{ $value | humanizeDuration }}'
+            description: 'Create a new PAT and run tools/create-proton-pat-secret.sh; every ProtonSecret stops syncing once it expires.'

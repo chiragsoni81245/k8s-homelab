@@ -1,0 +1,38 @@
+# Proton Pass -> Kubernetes Secrets operator (https://github.com/chiragsoni81245/proton-secrets-operator).
+# Installs the operator + the ProtonSecret CRD. The ProtonSecret objects live in the proton-secrets app.
+#
+# ONE-TIME, before the first sync (the PAT is the single bootstrap secret, never stored in git):
+#   sudo tools/create-proton-pat-secret.sh
+# PATs EXPIRE: when you rotate, re-run the script; it stores the new token and its expiry together (drives the alert).
+# The chart is pulled from the operator repo; pin targetRevision to a release tag once one exists.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: proton-secrets-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"   # after victoria-metrics (wave 2)
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: proton-secrets-system
+  sources:
+    - repoURL: https://github.com/chiragsoni81245/proton-secrets-operator.git
+      path: charts/proton-secrets-operator
+      targetRevision: main   # TODO: pin to a release tag (e.g. v0.1.0)
+      helm:
+        valueFiles:
+          - $values/gitops/apps/platform/proton-secrets-operator/values.yaml
+    - repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
+      targetRevision: main # homelab-revision
+      ref: values
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -1,0 +1,29 @@
+# ProtonSecret objects (WHICH Proton Pass items become which Kubernetes Secrets). Only references live in git, never values.
+# Add one manifest per Secret under manifests/. The operator (app proton-secrets-operator) creates the Secrets;
+# Argo does not track them, so prune/selfHeal never touches them.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: proton-secrets
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"   # after the operator (wave 3) installs the CRD
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: proton-secrets-system
+  source:
+    repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
+    targetRevision: main # homelab-revision
+    path: gitops/apps/platform/proton-secrets/manifests
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
