@@ -2,7 +2,7 @@
 
 image:
   repository: ghcr.io/chiragsoni81245/proton-secrets-operator
-  tag: "0.0.2"   # pinned; must exist in GHCR (published by the operator repo's release workflow)
+  tag: "v0.0.2"   # pinned; must exist in GHCR (published by the operator repo's release workflow)
 
 # Homelab has few nodes; two replicas with leader election is enough.
 replicaCount: 2
