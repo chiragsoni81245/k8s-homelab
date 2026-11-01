@@ -7,6 +7,18 @@ image:
 # Homelab has few nodes; two replicas with leader election is enough.
 replicaCount: 2
 
+# Strict: the two replicas must run on different nodes. If only one node is schedulable the second replica stays
+# Pending (use whenUnsatisfiable: ScheduleAnyway to prefer spreading instead). Setting this replaces the chart default,
+# so the selector is spelled out; the instance label is the Helm release name = the Argo Application name.
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: proton-secrets-operator
+        app.kubernetes.io/instance: proton-secrets-operator
+
 pat:
   existingSecret: proton-pat   # created by tools/create-proton-pat-secret.sh
   key: token
