@@ -3,7 +3,7 @@
 #
 # ONE-TIME, before the first sync (the PAT is the single bootstrap secret, never stored in git):
 #   sudo tools/create-proton-pat-secret.sh
-# PATs EXPIRE: when you rotate, re-run the script; it stores the new token and its expiry together (drives the alert).
+# PATs expire: when the token stops working the ProtonAuthFailing alert fires. Rotate by re-running the script.
 # The chart is pulled from the operator repo; pin targetRevision to a release tag once one exists.
 apiVersion: argoproj.io/v1alpha1
 kind: Application

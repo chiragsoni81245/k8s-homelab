@@ -11,9 +11,9 @@ Secrets come from Proton Pass via the [proton-secrets-operator](https://github.c
 
 ## Bootstrap (once)
 1. In Proton Pass create a dedicated vault (e.g. `homelab`) and a **read-only (viewer)** personal access token scoped to it,
-   with an expiry date (`pass-cli pat create`, see the pass-cli docs).
-2. `sudo tools/create-proton-pat-secret.sh` (token is prompted, never stored; it also asks for the PAT expiry and stores
-   it in the same Secret as `expires-at`, which drives the `ProtonPATExpiringSoon` alert).
+   (`pass-cli pat create`, see the pass-cli docs; PATs have an expiry date).
+2. `sudo tools/create-proton-pat-secret.sh` (token is prompted, never stored). When Proton starts rejecting the token
+   (e.g. it expired) the `ProtonAuthFailing` alert fires.
 3. Add the dummy item `homelab/dummy` with a `password` field, then:
    `kubectl -n proton-secrets-system get protonsecret,secret example` -> `Ready=True`.
 
@@ -25,7 +25,7 @@ workloads that only read the Secret at start (e.g. Grafana).
 ## Notes
 - Argo CD only prunes resources it tracks; the operator-created Secrets are not in git, so prune/selfHeal leave them alone.
 - If Proton is unreachable or the PAT expired, existing Secrets stay as they are; the ProtonSecret goes `Ready=False`.
-- Rotate the PAT: create a new one, re-run `tools/create-proton-pat-secret.sh` (token and expiry are updated together; no git change, no restart needed for the expiry).
+- Rotate the PAT: create a new one, re-run `tools/create-proton-pat-secret.sh` (no git change needed).
 - etcd encryption at rest is enabled by default by `scripts/50-master-init.sh` (`ENABLE_SECRETS_ENCRYPTION`).
 - Migrating the hand-made secrets (`create-grafana-secret.sh`, `create-cloudflare-secret.sh`, `create-samba-user.sh`) to
   `ProtonSecret`s is a later step; the scripts stay until each Secret is verified.

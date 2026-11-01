@@ -67,14 +67,12 @@ spec:
           annotations:
             summary: 'ProtonSecret {{ $labels.namespace }}/{{ $labels.name }} has not synced for 6h'
             description: 'Run `kubectl -n {{ $labels.namespace }} describe protonsecret {{ $labels.name }}` for the reason.'
-        - alert: ProtonPATExpiringSoon
-          # expires-at in the proton-pat Secret; 0 means unknown/not set and is ignored. Rotate: tools/create-proton-pat-secret.sh
-          expr: |
-            (protonsecret_pat_expiry_timestamp_seconds - time()) < 14 * 86400
-            and
-            protonsecret_pat_expiry_timestamp_seconds > 0
+        - alert: ProtonAuthFailing
+          # Proton rejected the token (expired, revoked or wrong). Counted per failed login/auth attempt by the operator.
+          expr: sum(increase(protonsecret_reconcile_total{result="auth"}[30m])) > 0
+          for: 5m
           labels:
             severity: critical
           annotations:
-            summary: 'The Proton Pass personal access token expires in {{ $value | humanizeDuration }}'
-            description: 'Create a new PAT and run tools/create-proton-pat-secret.sh; every ProtonSecret stops syncing once it expires.'
+            summary: 'Proton Pass is rejecting the operator token'
+            description: 'No ProtonSecret can sync. The PAT is probably expired or revoked: create a new one and run tools/create-proton-pat-secret.sh.'

@@ -10,9 +10,6 @@ replicaCount: 2
 pat:
   existingSecret: proton-pat   # created by tools/create-proton-pat-secret.sh
   key: token
-  # The PAT expiry lives in the same Secret (key expires-at, set by tools/create-proton-pat-secret.sh) and drives
-  # the ProtonPATExpiringSoon alert. The key must exist in the Secret; set to "" to disable.
-  expiresAtKey: expires-at
 
 # Bump the pass-cli version here without rebuilding the operator image. Empty = use the bundled one.
 passCli:
