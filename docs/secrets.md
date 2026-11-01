@@ -19,7 +19,7 @@ Secrets come from Proton Pass via the [proton-secrets-operator](https://github.c
 
 ## Using it
 Add a `ProtonSecret` next to the example. It syncs on change, every `refreshInterval`, on manual edits of the Secret
-(reverted) and when you set the annotation `proton.chiragsoni.org/force-sync` to a new value. `rolloutTargets` restarts
+(reverted) and when you set the annotation `proton-secrets.io/force-sync` to a new value. `rolloutTargets` restarts
 workloads that only read the Secret at start (e.g. Grafana).
 
 ## Notes
