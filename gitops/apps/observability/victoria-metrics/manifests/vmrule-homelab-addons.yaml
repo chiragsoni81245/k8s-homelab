@@ -68,9 +68,11 @@ spec:
             summary: 'ProtonSecret {{ $labels.namespace }}/{{ $labels.name }} has not synced for 6h'
             description: 'Run `kubectl -n {{ $labels.namespace }} describe protonsecret {{ $labels.name }}` for the reason.'
         - alert: ProtonAuthFailing
-          # Proton rejected the token (expired, revoked or wrong). Counted per failed login/auth attempt by the operator.
-          expr: sum(increase(protonsecret_reconcile_total{result="auth"}[30m])) > 0
-          for: 5m
+          # 0 = the last use of the token was rejected by Proton (expired, revoked or wrong); it returns to 1 on the first
+          # success, so the alert clears as soon as the token works. Network errors and operator misconfiguration
+          # (unreadable token file, missing pass-cli) do not set it; those show as result="transient"/"config" instead.
+          expr: min(protonsecret_auth_ok) == 0
+          for: 10m
           labels:
             severity: critical
           annotations:
