@@ -23,6 +23,16 @@ controlPlaneEndpoint: "${CONTROL_PLANE_ENDPOINT}:6443"
 networking:
   podSubnet: ${POD_CIDR}
   serviceSubnet: ${SERVICE_CIDR}
+# This repo runs exactly one control-plane node, so there is no one to elect: without this each of the two renews a
+# lease in etcd every 2s - constant disk-confirmed writes, expensive on a spinning HDD.
+controllerManager:
+  extraArgs:
+    - name: leader-elect
+      value: "false"
+scheduler:
+  extraArgs:
+    - name: leader-elect
+      value: "false"
 apiServer:
   certSANs:
     - ${CONTROL_PLANE_ENDPOINT}

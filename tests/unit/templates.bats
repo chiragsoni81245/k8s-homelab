@@ -25,6 +25,8 @@ yaml_docs() { python3 -c 'import sys,yaml; print(" ".join(d["kind"] for d in yam
   [ "$(yaml_docs <<<"$out")" = "InitConfiguration ClusterConfiguration KubeletConfiguration" ]
   ! grep -q 'encryption-provider-config' <<<"$out"
   grep -q 'taints: \[\]' <<<"$out"
+  # single control plane: no leader election for controller-manager / scheduler (constant etcd writes otherwise)
+  [ "$(python3 -c 'import sys,yaml; c=[d for d in yaml.safe_load_all(sys.stdin) if d["kind"]=="ClusterConfiguration"][0]; print(c["controllerManager"]["extraArgs"][0]["value"], c["scheduler"]["extraArgs"][0]["value"])' <<<"$out")" = "false false" ]
   grep -q 'addon/kube-proxy' <<<"$out"
 }
 @test "kubeadm-join renders with a CA hash" {

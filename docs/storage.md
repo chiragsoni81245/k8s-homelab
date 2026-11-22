@@ -60,3 +60,13 @@ put any pod using the claim onto the node that has `/DATA` automatically. `tests
   (`jellyfin-k8s`) so nothing gets migrated.
 
 Small disposable volumes: PVC with `storageClassName: local-path`. To pin it to a node, set the pod `nodeSelector` key `homelab/disk` to `ssd` (block style, like all YAML in this repo).
+
+## Spinning HDD as root disk
+etcd waits for every write to reach the disk; on a 5400 rpm laptop HDD that is ~50-150 ms each, and the whole cluster
+waits with it (load average far above the busy CPUs, high `wa` in `vmstat`, `%util` ~100 in `iostat -x`). To write less:
+- `setup.sh` (`tune_for_hdd` in `scripts/20-system-prep.sh`, only when `/` is on an HDD): `noatime,commit=60` on `/`
+  and the system journal kept in RAM (`templates/system/journald-homelab-hdd.conf`; host logs are lost on reboot).
+- No leader election for kube-controller-manager / kube-scheduler (`templates/kubernetes/kubeadm-init.yaml`; one
+  control plane, so nothing to elect) and slower Cilium L2 lease renewals (`l2announcements.lease*` in the Cilium values).
+- A crash/power cut can lose up to ~60s of recent writes that were not fsynced (logs etc.); etcd still syncs its own.
+An SSD for `/` (keep the HDD for `/DATA`) removes the problem instead.

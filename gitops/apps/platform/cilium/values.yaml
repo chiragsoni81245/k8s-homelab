@@ -14,6 +14,12 @@ routingMode: tunnel
 tunnelProtocol: vxlan
 l2announcements:
   enabled: true             # answer ARP for LoadBalancer IPs on the LAN
+  # One lease per LB IP, renewed by its announcing node. Defaults (15s/5s/2s) = a write to etcd every ~2s per IP,
+  # each one waited for on disk - expensive on a spinning HDD. Renewing every ~10s cuts that ~5x; the cost is
+  # slower failover to another node (up to 60s), which doesn't matter on a single node.
+  leaseDuration: 60s
+  leaseRenewDeadline: 30s
+  leaseRetryPeriod: 10s
 k8sClientRateLimit:         # required headroom for L2 announcement leader election
   qps: 20
   burst: 100
