@@ -2,7 +2,9 @@
 
 image:
   repository: ghcr.io/chiragsoni81245/proton-secrets-operator
-  tag: "latest"   # pinned; must exist in GHCR (published by the operator repo's release workflow)
+  # Pinned to a release, the same one as the chart (targetRevision in application.yaml) - bump both together.
+  # Never "latest": the chart's pullPolicy is IfNotPresent, so a moving tag keeps the node's cached old image.
+  tag: "v1.0.0"
 
 # Single-node cluster: one replica (leader election stays on, so raising this later just works).
 replicaCount: 1
