@@ -4,19 +4,20 @@ App: `gitops/apps/observability/victoria-metrics/` (chart `victoria-metrics-k8s-
 
 | File | What |
 |---|---|
-| `values.yaml` | VMCluster, VictoriaLogs (vlsingle), vmagent, vmalert, Alertmanager, Grafana, node-exporter, kube-state-metrics; what is (not) scraped |
+| `values.yaml` | VMCluster, VictoriaLogs (vlsingle), vmagent, Grafana, node-exporter, kube-state-metrics (vmalert + Alertmanager: off); what is (not) scraped |
 | `manifests/vm*scrape-*.yaml` | extra targets: Cilium agent + operator, Envoy proxies + Envoy Gateway controller |
-| `manifests/vmrule-homelab-addons.yaml` | extra alerts: backend 5xx rate, gateway certificate expiry, Cilium drop rate |
-| `manifests/httproute-*.yaml` | `grafana.` and `alertmanager.chiragsoni.org` through the homelab Gateway |
+| `manifests/vmrule-homelab-addons.yaml` | extra alert rules: backend 5xx rate, gateway certificate expiry, Cilium drop rate, Proton sync/auth (not evaluated while vmalert is off) |
+| `manifests/httproute-*.yaml` | `grafana.chiragsoni.org` through the homelab Gateway |
 | `dashboards/*.json` | own Grafana dashboards (AMD GPU) |
 
 ## Layout
 Single node (the master runs everything): one `vmstorage-vm-0` (5Gi local-path), `replicationFactor: 1`, plus
-operator, vminsert, vmselect, vmagent, vmalert, alertmanager, kube-state-metrics, grafana, node-exporter.
+operator, vminsert, vmselect, vmagent (scrapes every 60s), kube-state-metrics, grafana, node-exporter.
 - One copy of every sample: if the node is down there are no metrics for that time (nothing to fail over to anyway).
 - Data lives in `/var/lib/local-path` on the **root disk** (not `/DATA`). The 5Gi is nominal, not enforced;
   `storage.minFreeDiskSpaceBytes=1GB` switches vmstorage to read-only before the disk fills up.
   VictoriaLogs (`vlsingle`) is on the same disk, capped at 9GiB by `retention.maxDiskSpaceUsageBytes`.
+  vmselect's query cache is in RAM (tmpfs, 128Mi), not on the disk.
 - Retention **7 days**. Check real usage: `sudo du -sh /var/lib/local-path/*`.
 
 ## First install
@@ -27,21 +28,19 @@ operator, vminsert, vmselect, vmagent, vmalert, alertmanager, kube-state-metrics
    (Manual equivalent: `kubectl create namespace monitoring`, then `kubectl -n monitoring create secret generic grafana-admin
    --from-literal=admin-user=admin --from-literal=admin-password=<password>`.)
 2. Push. Argo syncs the `cilium` app (metrics port on; the agents restart one node at a time) and creates `victoria-metrics`.
-3. Point `grafana.` and `alertmanager.chiragsoni.org` at `192.168.0.200` (like Jellyfin, see [networking](networking.md)).
+3. Point `grafana.chiragsoni.org` at `192.168.0.200` (like Jellyfin, see [networking](networking.md)).
 4. Check:
    ```bash
-   kubectl -n monitoring get vmcluster,vmagent,vmalert,vmalertmanager   # STATUS operational
+   kubectl -n monitoring get vmcluster,vmagent                           # STATUS operational
    kubectl -n monitoring get pods -o wide                                # all Running
    ```
    Targets: `kubectl -n monitoring port-forward svc/vmagent-vm 8429` -> http://localhost:8429/targets (all `up`).
 
 ## URLs
-- **vmui** (queries, also shows vmalert's alerts/rules): not exposed. `kubectl -n monitoring port-forward svc/vmselect-vm 8481`
+- **vmui** (queries): not exposed. `kubectl -n monitoring port-forward svc/vmselect-vm 8481`
   -> http://localhost:8481/select/0/vmui/ (or query in Grafana Explore)
 - **Grafana**: https://grafana.chiragsoni.org (dashboards synced at deploy time: Kubernetes views, node-exporter, VM components,
   Cilium agent/operator, Envoy Gateway/proxy/clusters)
-- **Alertmanager**: https://alertmanager.chiragsoni.org
-- Alertmanager has **no login**: keep it LAN/NetBird-only (no inbound ports are opened, see networking).
 
 ## What is scraped
 node-exporter, kubelet, cAdvisor, kube-state-metrics, kube-apiserver, CoreDNS, the VM components, Grafana, Cilium (agent `:9962`,
@@ -62,9 +61,12 @@ Not scraped: etcd, kube-scheduler, kube-controller-manager (bound to `127.0.0.1`
   -> http://localhost:9428/select/vmui/
 - Only container logs (stdout/stderr); host logs (journald, kubelet) are not collected.
 
-## Alerts
-Default rules from the chart (Kubernetes, node, VM components, `TargetDown`, and an always-firing `Watchdog`) plus `manifests/vmrule-homelab-addons.yaml`.
-Alertmanager has **no receiver yet**: alerts show in its UI only. Add one under `alertmanager.config` in `values.yaml`.
+## Alerts (currently off)
+The rules are defined - default rules from the chart (Kubernetes, node, VM components, `TargetDown`, `Watchdog`) plus
+`manifests/vmrule-homelab-addons.yaml` - but **nothing evaluates them**: vmalert and Alertmanager are disabled because there
+is no receiver yet, and evaluating every rule constantly was the main disk load on the HDD (via vmselect).
+To turn them on: `vmalert.enabled` and `alertmanager.enabled` -> `true` in `values.yaml`, add a receiver under
+`alertmanager.config`, and (for its UI) restore `manifests/httproute-alertmanager.yaml` from git history + its DNS name.
 
 ## Add a scrape target
 Expose metrics on a named port, then add a `VMServiceScrape` (via a Service) or `VMPodScrape` (pods directly) as a new file `manifests/<kind>-<name>.yaml`,

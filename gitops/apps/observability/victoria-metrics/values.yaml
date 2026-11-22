@@ -3,8 +3,9 @@
 # What runs (namespace monitoring):
 #   operator             turns the VM* custom resources below into StatefulSets/Deployments
 #   VMCluster            vmstorage x1 (5Gi local-path, replicationFactor 1) + vminsert + vmselect (vmui)
-#   vmagent              scrapes everything, writes to vminsert
-#   vmalert + alertmanager   default rules + manifests/vmrule-homelab-addons.yaml; NO receiver yet (alerts only show in the UIs)
+#   vmagent              scrapes everything every 60s, writes to vminsert
+#   vmalert + alertmanager   OFF (no receiver yet). The rules stay defined (default rules + manifests/vmrule-homelab-addons.yaml);
+#                        set enabled: true on both to evaluate them again - see "Alerts" in docs/observability.md
 #   grafana              dashboards (synced from upstream at deploy time by the chart's sync-job)
 #   node-exporter (every node), kube-state-metrics
 # Extra scrapes for Cilium and Envoy Gateway, add-on alerts and routes: manifests/ (one resource per file).
@@ -75,13 +76,18 @@ vmcluster:
           memory: 1Gi
     vmselect:
       replicaCount: 1
-      storage: null          # query cache on emptyDir (there is no default StorageClass)
+      # Query cache + temporary result blocks in RAM (tmpfs) instead of on the root disk: they were the largest writer on
+      # the spinning HDD. Lost on restart (it is a cache). tmpfs counts against the memory limit, hence 512Mi + 128Mi.
+      storage:
+        emptyDir:
+          medium: Memory
+          sizeLimit: 128Mi
       resources:
         requests:
           cpu: 50m
           memory: 128Mi
         limits:
-          memory: 512Mi
+          memory: 640Mi
     vminsert:
       replicaCount: 1
       resources:
@@ -93,7 +99,9 @@ vmcluster:
 
 vmagent:
   spec:
-    scrapeInterval: 30s
+    # 60s instead of 30s: half the samples to scrape, write and compact. Plenty for a homelab; dashboards that use
+    # $__rate_interval adapt by themselves.
+    scrapeInterval: 60s
     resources:
       requests:
         cpu: 50m
@@ -101,7 +109,11 @@ vmagent:
       limits:
         memory: 512Mi
 
+# Off while there is no receiver: it evaluated every rule constantly, and those queries made vmselect the busiest
+# disk writer. To turn alerts back on: enabled: true here and in alertmanager, add a receiver, restore
+# manifests/httproute-alertmanager.yaml from git history if you want its UI.
 vmalert:
+  enabled: false
   spec:
     resources:
       requests:
@@ -111,6 +123,7 @@ vmalert:
         memory: 256Mi
 
 alertmanager:
+  enabled: false
   spec:
     resources:
       requests:
@@ -118,7 +131,7 @@ alertmanager:
         memory: 32Mi
       limits:
         memory: 128Mi
-  # Add a receiver here later (ntfy / Telegram / email); until then alerts are only visible in the Alertmanager UI.
+  # Add a receiver here (ntfy / Telegram / email) when turning alerts back on.
   config:
     route:
       receiver: blackhole
