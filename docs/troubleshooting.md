@@ -7,5 +7,7 @@
 - LB IP unreachable: pool excluded from router DHCP? `kubectl get ciliumloadbalancerippool`, `kubectl -n envoy-gateway-system get svc`,
   `kubectl get ciliuml2announcementpolicy`; interface regex in `cilium/manifests/ciliuml2announcementpolicy-homelab.yaml` must match your NIC name (`ip -br link`).
 - Argo app stuck: `kubectl -n argocd get applications`, `argocd` UI; wrong repo URL -> `tools/set-repo-url.sh`, push.
+- Lost the Argo CD admin password / `argocd-initial-admin-secret` already deleted: `sudo tools/reset-argocd-password.sh`
+  (empty prompt = Argo generates a new one and it is shown once; or type your own).
 - Rebuild a node: reinstall Ubuntu, run the curl one-liner again; `/DATA` is only mounted, never formatted.
 - Rejoin a worker: on the node `sudo kubeadm reset -f`, on the master `kubectl delete node <name>`, then run setup.sh again.

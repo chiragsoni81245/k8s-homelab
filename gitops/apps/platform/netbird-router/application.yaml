@@ -5,7 +5,7 @@
 # SSH/kubectl and keeps working when Kubernetes is down. Details + NetBird console steps: docs/networking.md.
 #
 # ONE-TIME: put a reusable + ephemeral NetBird setup key (auto-group k8s-router) in Proton Pass as the password of
-# the login item homelab/netbird-router (see manifests/protonsecret-netbird-setup-key.yaml).
+# the login item netbird-router in vault "Homelab Secrets Vault" (see manifests/protonsecret-netbird-setup-key.yaml).
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

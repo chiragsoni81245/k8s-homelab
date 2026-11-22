@@ -44,7 +44,7 @@ was taken before NetBird's forward ACL and silently lost.
 1. **Groups**: `k8s-router` (the pod) and one for your own devices, e.g. `admins`.
 2. **Setup key** for the pod: reusable, **ephemeral**, auto-assigned group `k8s-router`. Ephemeral matters: the pod
    keeps no state, so each restart registers a new peer and NetBird removes the old offline one after ~10 min.
-   Store the key in Proton Pass as the password of login item `homelab/netbird-router`; the `ProtonSecret` in
+   Store the key in Proton Pass as the password of login item `netbird-router` in vault `Homelab Secrets Vault`; the `ProtonSecret` in
    `netbird-router/manifests/` turns it into the Secret the pod reads.
 3. **Networks -> Add network** `homelab-lb`: resources `192.168.0.200/29` and `192.168.0.208/28` (covers the pool
    `.200-.220`), routing peer **group** `k8s-router` (a group, not a single peer, so a replaced pod takes over by itself).
