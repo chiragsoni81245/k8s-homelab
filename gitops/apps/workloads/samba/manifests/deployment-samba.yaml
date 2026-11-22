@@ -1,4 +1,4 @@
-# Samba (image: https://github.com/ServerContainers/samba, smbd only) sharing /DATA on the Asus.
+# Samba (image: https://github.com/ServerContainers/samba, smbd only) sharing /DATA of the node that has it mounted.
 # Users, groups and shares: configmap-samba-config.yaml. Passwords: Secret samba-users (see application.yaml).
 apiVersion: apps/v1
 kind: Deployment
@@ -21,7 +21,7 @@ spec:
         # so the new pod template is what makes Argo roll the pod.
         homelab/config-revision: "1"
     spec:
-      # The Asus has /DATA; it also announces the LB IPs (cilium/manifests/ciliuml2announcementpolicy-homelab.yaml)
+      # Any node with /DATA mounted (label set by setup.sh, master or worker). No such node = the pod stays Pending.
       nodeSelector:
         homelab/storage: media
       containers:

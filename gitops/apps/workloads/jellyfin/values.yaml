@@ -38,8 +38,10 @@ resources:
   requests:
     cpu: 250m
     memory: 512Mi
-  # No limits on purpose (no CPU limit lets transcodes use the cores). On a small node, add e.g.
-  #   limits: {memory: 3Gi}   (written as a block) so Jellyfin cannot starve everything else.
+  # No CPU limit (lets transcodes use the cores). Memory capped: the whole cluster shares one 8GB node, and an
+  # uncapped transcode/library scan could push the node into OOM and take the control plane with it.
+  limits:
+    memory: 3Gi
 
 # No nodeSelector needed: the claims are pinned to the node with /DATA by the PVs' nodeAffinity.
 

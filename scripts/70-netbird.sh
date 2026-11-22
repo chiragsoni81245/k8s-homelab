@@ -25,7 +25,7 @@ connect_netbird() {
   [[ -n "${NETBIRD_MANAGEMENT_URL:-}" ]] && args+=(--management-url "$NETBIRD_MANAGEMENT_URL")
   netbird "${args[@]}"
   unset NETBIRD_SETUP_KEY
-  log "NetBird connected. In the NetBird console make this peer a routing peer for your LAN/LB range and set ACLs."
+  log "NetBird connected. LB IPs are routed by the in-cluster k8s-router peer, not this one (docs/networking.md)."
 }
 
 if netbird_connected; then

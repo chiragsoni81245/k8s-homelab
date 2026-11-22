@@ -1,10 +1,10 @@
-# Transmission on the Asus. Chart: https://github.com/lexfrei/charts (linuxserver/transmission image)
+# Transmission on the node that has /DATA. Chart: https://github.com/lexfrei/charts (linuxserver/transmission image)
 #
 # Volumes (declared in manifests/, both on the /DATA partition):
 #   /downloads <- /DATA/Downloads/Torrent             finished + incomplete torrents
 #   /config    <- /DATA/AppData/transmission-k8s      settings.json, torrent list/resume data (survives rebuilds)
 #
-# ONE-TIME, on the Asus (local PVs need the folders to exist; owned by the user below):
+# ONE-TIME, on the node that has /DATA (local PVs need the folders to exist; owned by the user below):
 #   sudo mkdir -p /DATA/Downloads/Torrent /DATA/AppData/transmission-k8s
 #   sudo chown 1000:1000 /DATA/AppData/transmission-k8s      # and check /DATA/Downloads/Torrent: stat -c '%u:%g'
 #
@@ -12,7 +12,7 @@
 # reachable from the LAN and NetBird only - keep it that way.
 
 env:
-  # Run as the owner of your files. CHECK: `stat -c '%u:%g' /DATA/Downloads/Torrent` on the Asus.
+  # Run as the owner of your files. CHECK: `stat -c '%u:%g' /DATA/Downloads/Torrent` on that node.
   PUID: "1000"
   PGID: "1000"
   TZ: Asia/Kolkata
@@ -49,7 +49,7 @@ securityContext:
       - DAC_OVERRIDE
       - FOWNER
 
-# Pinned to the Asus (where /DATA is); the PVs' nodeAffinity says the same
+# Pinned to the node with /DATA mounted (homelab/storage=media, master or worker); the PVs' nodeAffinity says the same
 nodeSelector:
   homelab/storage: media
 
@@ -70,7 +70,7 @@ resources:
   requests:
     cpu: 100m
     memory: 128Mi
-  # Asus has 8GB; no CPU limit so hashing/verifying isn't throttled
+  # no CPU limit so hashing/verifying isn't throttled
   limits:
     cpu: null
     memory: 512Mi

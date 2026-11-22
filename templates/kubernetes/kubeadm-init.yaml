@@ -29,3 +29,24 @@ apiServer:
     - ${MASTER_IP}
     - ${NODE_NAME}
 ${APISERVER_EXTRA}
+---
+# Sized for a single 8GB / 100GB node that runs the control plane AND every app. Reserving memory for the OS and
+# kubelet/containerd lowers the pods' allocatable, so the scheduler stops placing pods before the host itself runs
+# short, and the kubelet evicts pods (lowest priority first) before the kernel OOM killer hits etcd/apiserver.
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+systemReserved:
+  cpu: 200m
+  memory: 512Mi
+kubeReserved:
+  cpu: 200m
+  memory: 512Mi
+# All four signals spelled out: setting evictionHard replaces the whole default map.
+evictionHard:
+  memory.available: 300Mi
+  nodefs.available: 10%
+  nodefs.inodesFree: 5%
+  imagefs.available: 10%
+# Container log rotation (per container): 10Mi x 3 files
+containerLogMaxSize: 10Mi
+containerLogMaxFiles: 3

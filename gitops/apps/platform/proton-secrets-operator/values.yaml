@@ -4,16 +4,16 @@ image:
   repository: ghcr.io/chiragsoni81245/proton-secrets-operator
   tag: "latest"   # pinned; must exist in GHCR (published by the operator repo's release workflow)
 
-# Homelab has few nodes; two replicas with leader election is enough.
-replicaCount: 2
+# Single-node cluster: one replica (leader election stays on, so raising this later just works).
+replicaCount: 1
 
-# Strict: the two replicas must run on different nodes. If only one node is schedulable the second replica stays
-# Pending (use whenUnsatisfiable: ScheduleAnyway to prefer spreading instead). Setting this replaces the chart default,
-# so the selector is spelled out; the instance label is the Helm release name = the Argo Application name.
+# Soft spread: prefers different nodes if more are ever added, but never leaves a replica Pending on one node
+# (DoNotSchedule would). Setting this replaces the chart default, so the selector is spelled out; the instance
+# label is the Helm release name = the Argo Application name.
 topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: kubernetes.io/hostname
-    whenUnsatisfiable: DoNotSchedule
+    whenUnsatisfiable: ScheduleAnyway
     labelSelector:
       matchLabels:
         app.kubernetes.io/name: proton-secrets-operator

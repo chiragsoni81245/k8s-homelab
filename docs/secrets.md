@@ -6,7 +6,7 @@ Secrets come from Proton Pass via the [proton-secrets-operator](https://github.c
 | Piece | Where |
 |-------|-------|
 | Operator + CRD (Helm chart from the operator repo) | `gitops/apps/platform/proton-secrets-operator/` (wave 3) |
-| `ProtonSecret` objects (one manifest per Secret) | `gitops/apps/platform/proton-secrets/manifests/` (wave 4) |
+| `ProtonSecret` objects (one manifest per Secret) | in the `manifests/` of the app that uses the Secret, e.g. `platform/netbird-router/manifests/protonsecret-netbird-setup-key.yaml` |
 | Bootstrap PAT Secret | `sudo tools/create-proton-pat-secret.sh` -> `proton-secrets-system/proton-pat` |
 
 ## Bootstrap (once)
@@ -14,11 +14,10 @@ Secrets come from Proton Pass via the [proton-secrets-operator](https://github.c
    (`pass-cli pat create`, see the pass-cli docs; PATs have an expiry date).
 2. `sudo tools/create-proton-pat-secret.sh` (token is prompted, never stored). When Proton starts rejecting the token
    (e.g. it expired) the `ProtonAuthFailing` alert fires.
-3. Add the dummy item `homelab/dummy` with a `password` field, then:
-   `kubectl -n proton-secrets-system get protonsecret,secret example` -> `Ready=True`.
+3. Check: `kubectl get protonsecret -A` -> every one `Ready=True` (the first is the NetBird router's setup key).
 
 ## Using it
-Add a `ProtonSecret` next to the example. It syncs on change, every `refreshInterval`, on manual edits of the Secret
+Add a `ProtonSecret` to the app's `manifests/` (its Application needs `SkipDryRunOnMissingResource=true` and a sync wave after the operator's 3). It syncs on change, every `refreshInterval`, on manual edits of the Secret
 (reverted) and when you set the annotation `proton-secrets.io/force-sync` to a new value. `rolloutTargets` restarts
 workloads that only read the Secret at start (e.g. Grafana).
 

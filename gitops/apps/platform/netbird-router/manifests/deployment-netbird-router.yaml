@@ -1,0 +1,59 @@
+# NetBird client running as the routing peer for the LB IPs (see ../application.yaml for why it's a pod).
+# Path of a request:  laptop -WireGuard-> this pod's wt0 -masquerade-> pod eth0 -Cilium service LB-> Envoy/Samba pod
+#
+# The peer identity lives in an emptyDir, so every new pod registers as a NEW peer. That is why the setup key must be
+# EPHEMERAL (NetBird deletes the old offline peer after ~10 min) and auto-assign the group k8s-router, which the
+# NetBird Network uses as its routing peer group - a restarted pod becomes the routing peer again by itself.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netbird-router
+  namespace: netbird
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netbird-router
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: netbird-router
+    spec:
+      containers:
+        - name: netbird
+          image: netbirdio/netbird:0.81.2   # pinned; keep in step with NETBIRD_VERSION in versions.env
+          env:
+            - name: NB_SETUP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: netbird-setup-key   # from Proton Pass: protonsecret-netbird-setup-key.yaml
+                  key: setup-key
+            - name: NB_HOSTNAME
+              value: k8s-router             # peer name in the NetBird console
+            - name: NB_DISABLE_DNS
+              value: "true"                 # leave the pod's cluster DNS (resolv.conf) alone
+            - name: NB_LOG_LEVEL
+              value: info
+            - name: NB_LOG_FILE
+              value: console                # the image default also writes an unrotated file inside the container
+            # Self-hosted NetBird: uncomment and set (default is NetBird cloud)
+            # - name: NB_MANAGEMENT_URL
+            #   value: https://netbird.example.org
+          securityContext:
+            # Needed to create the WireGuard interface, enable IP forwarding and add the masquerade rules. All of
+            # that happens in the POD's network namespace, not the host's; the host NetBird agent is unaffected.
+            privileged: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: state
+              mountPath: /var/lib/netbird
+      volumes:
+        - name: state
+          emptyDir: {}

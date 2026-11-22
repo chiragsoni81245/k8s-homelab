@@ -1,5 +1,5 @@
 # Samba users, groups and shares (read by deployment-samba.yaml via envFrom; the image builds smb.conf from these at
-# every start, so nothing is created on the Asus itself). Passwords live in the hand-made Secret samba-users.
+# every start, so nothing is created on the host itself). Passwords live in the hand-made Secret samba-users.
 #
 # AFTER EDITING THIS FILE: bump `homelab/config-revision` in deployment-samba.yaml in the same commit - a changed
 # ConfigMap alone does not restart the pod.

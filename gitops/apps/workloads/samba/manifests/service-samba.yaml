@@ -9,7 +9,7 @@ metadata:
     lbipam.cilium.io/ips: 192.168.0.201
 spec:
   type: LoadBalancer
-  externalTrafficPolicy: Local   # real client IPs in the Samba logs; the pod runs on the Asus, which announces the IP
+  externalTrafficPolicy: Local   # real client IPs in the Samba logs; only the node running the pod announces the IP
   selector:
     app.kubernetes.io/name: samba
   ports:

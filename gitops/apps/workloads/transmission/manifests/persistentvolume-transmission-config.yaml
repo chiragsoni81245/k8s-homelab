@@ -1,5 +1,5 @@
 # Transmission's own volumes. `local` PVs need the folder to EXIST already (see values.yaml for the one-time mkdir).
-# Pinned to the node that has /DATA mounted (label set by scripts/35-data-mount.sh + 60-worker-join.sh).
+# Pinned to the node that has /DATA mounted (label homelab/storage=media, set by setup.sh on any node - master or worker - with /DATA).
 # Capacity is nominal (not enforced). Retain + local = deleting these objects never touches your files.
 apiVersion: v1
 kind: PersistentVolume

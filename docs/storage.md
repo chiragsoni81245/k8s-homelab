@@ -5,6 +5,10 @@
 | `local-data` | static local PVs, **declared by each app** | folders on the node that has the `/DATA` partition (existing, never formatted) | media, downloads, app config you want to survive rebuilds |
 | `local-path` | dynamic (Rancher local-path-provisioner) | `/var/lib/local-path` on the node the pod lands on | small disposable volumes |
 
+`/DATA` is optional and can be on **any** node, master or worker: `setup.sh` asks on either role and labels the node
+`homelab/storage=media` when it is mounted. Only the apps that keep data there (Jellyfin, Transmission, Samba) are
+pinned to that label; if no node has `/DATA` they stay `Pending` and the rest of the cluster is unaffected.
+
 ## Pattern: every app brings its own PV + PVC + pod
 There is no shared "data" volume. Each app declares exactly the folder(s) it needs:
 ```

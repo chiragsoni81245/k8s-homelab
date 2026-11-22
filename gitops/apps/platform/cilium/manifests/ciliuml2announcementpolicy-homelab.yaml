@@ -3,11 +3,9 @@ kind: CiliumL2AnnouncementPolicy
 metadata:
   name: homelab
 spec:
-  # Only the Asus answers ARP for LB IPs, so the NetBird routing peer (Dell) always forwards them over the LAN
-  # instead of to itself (a node can't ARP-resolve its own announced IP). See docs/networking.md.
-  nodeSelector:
-    matchLabels:
-      homelab/storage: media
+  # No nodeSelector: any node may answer ARP for an LB IP. The Services here use externalTrafficPolicy: Local, and
+  # Cilium only lets a node announce such a Service if it runs one of its pods - so .200 follows Envoy and .201
+  # follows Samba, wherever they are scheduled. NetBird reaches these IPs through the in-cluster k8s-router pod.
   loadBalancerIPs: true
   # No `interfaces` list on purpose: every interface of the announcing node answers, so nothing here
   # depends on how the NICs are named (enp0s3, eno1, eth0, ...).

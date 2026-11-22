@@ -12,8 +12,7 @@ spec:
     kubernetes:
       # One Envoy per node (DaemonSet instead of the default single-replica Deployment). With externalTrafficPolicy
       # Local, Cilium only hands .200 traffic to an Envoy on the node that received it, i.e. the node announcing .200
-      # (pinned to the Asus in cilium/manifests/ciliuml2announcementpolicy-homelab.yaml). The other Envoys serve nothing external but are ready
-      # if that pin changes.
+      # (any node runs an Envoy, so any node may win that election). The other Envoys take over if that node goes away.
       envoyDaemonSet: {}
       envoyService:
         type: LoadBalancer

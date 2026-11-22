@@ -11,17 +11,13 @@ App: `gitops/apps/observability/victoria-metrics/` (chart `victoria-metrics-k8s-
 | `dashboards/*.json` | own Grafana dashboards (AMD GPU) |
 
 ## Layout
-```
-Dell (master)                          Asus (worker)
-vmstorage-vm-0  5Gi local-path         vmstorage-vm-1  5Gi local-path
-node-exporter                          node-exporter
-+ operator, vminsert, vmselect, vmagent, vmalert, alertmanager, kube-state-metrics, grafana: wherever they fit
-```
-- `replicationFactor: 2`: every sample is stored on both vmstorage pods; one node down = no data loss, queries still work
-  if vminsert/vmselect are on the surviving node (they're single replicas; Kubernetes reschedules them after ~5 min).
-- Data lives in `/var/lib/local-path` on each node's **root disk** (not `/DATA`). The 5Gi is nominal, not enforced;
+Single node (the master runs everything): one `vmstorage-vm-0` (5Gi local-path), `replicationFactor: 1`, plus
+operator, vminsert, vmselect, vmagent, vmalert, alertmanager, kube-state-metrics, grafana, node-exporter.
+- One copy of every sample: if the node is down there are no metrics for that time (nothing to fail over to anyway).
+- Data lives in `/var/lib/local-path` on the **root disk** (not `/DATA`). The 5Gi is nominal, not enforced;
   `storage.minFreeDiskSpaceBytes=1GB` switches vmstorage to read-only before the disk fills up.
-- Retention **7 days**. Check real usage: `sudo du -sh /var/lib/local-path/*vmstorage*` on each node.
+  VictoriaLogs (`vlsingle`) is on the same disk, capped at 9GiB by `retention.maxDiskSpaceUsageBytes`.
+- Retention **7 days**. Check real usage: `sudo du -sh /var/lib/local-path/*`.
 
 ## First install
 1. Create the Grafana admin secret (never in git) with the helper; an empty password prompt generates one and shows it once:
@@ -35,7 +31,7 @@ node-exporter                          node-exporter
 4. Check:
    ```bash
    kubectl -n monitoring get vmcluster,vmagent,vmalert,vmalertmanager   # STATUS operational
-   kubectl -n monitoring get pods -o wide                                # vmstorage-vm-0/1 on different nodes
+   kubectl -n monitoring get pods -o wide                                # all Running
    ```
    Targets: `kubectl -n monitoring port-forward svc/vmagent-vm 8429` -> http://localhost:8429/targets (all `up`).
 
@@ -50,7 +46,7 @@ node-exporter                          node-exporter
 ## What is scraped
 node-exporter, kubelet, cAdvisor, kube-state-metrics, kube-apiserver, CoreDNS, the VM components, Grafana, Cilium (agent `:9962`,
 operator `:9963`), Envoy proxies (`:19001/stats/prometheus`) and the Envoy Gateway controller (`:19001/metrics`).
-**GPU (Dell, AMD):** node-exporter's `drm` collector (`--collector.drm` in `values.yaml`) adds `node_drm_gpu_busy_percent`,
+**GPU (AMD):** node-exporter's `drm` collector (`--collector.drm` in `values.yaml`) adds `node_drm_gpu_busy_percent`,
 `node_drm_memory_vram_{used,size}_bytes` and GTT usage per `card`; temperature and power come from `hwmon` (`chip_name="amdgpu"`).
 Grafana dashboard **AMD GPU** (`dashboards/amd-gpu.json`, fetched by the sync-job from this repo's public `main` branch).
 The card with ~6 GB VRAM is the dedicated Navi 10 (PCI `03:00.0`); the other is the Renoir iGPU (`07:00.0`).

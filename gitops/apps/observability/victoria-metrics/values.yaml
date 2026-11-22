@@ -2,11 +2,11 @@
 #
 # What runs (namespace monitoring):
 #   operator             turns the VM* custom resources below into StatefulSets/Deployments
-#   VMCluster            vmstorage x2 (one per node, 5Gi local-path each, replicationFactor 2) + vminsert + vmselect (vmui)
+#   VMCluster            vmstorage x1 (5Gi local-path, replicationFactor 1) + vminsert + vmselect (vmui)
 #   vmagent              scrapes everything, writes to vminsert
 #   vmalert + alertmanager   default rules + manifests/vmrule-homelab-addons.yaml; NO receiver yet (alerts only show in the UIs)
 #   grafana              dashboards (synced from upstream at deploy time by the chart's sync-job)
-#   node-exporter (both nodes), kube-state-metrics
+#   node-exporter (every node), kube-state-metrics
 # Extra scrapes for Cilium and Envoy Gateway, add-on alerts and routes: manifests/ (one resource per file).
 #
 # ONE-TIME, before the first sync (Grafana admin login, never stored in git):
@@ -55,17 +55,9 @@ vmcluster:
   enabled: true
   spec:
     retentionPeriod: "7d"
-    replicationFactor: 1     # every sample is kept on both vmstorage pods, so one node can be down
+    replicationFactor: 1     # single node: one copy of every sample (node down = no metrics until it is back)
     vmstorage:
-      replicaCount: 1        # one per node (affinity below); each one's volume then pins it to that node
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: vmstorage
-                  app.kubernetes.io/instance: vm
+      replicaCount: 1        # single node; its local-path volume pins it there
       storage:
         volumeClaimTemplate:
           spec:

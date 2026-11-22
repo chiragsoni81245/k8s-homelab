@@ -1,0 +1,34 @@
+# NetBird routing peer INSIDE the cluster, for the LoadBalancer IPs (192.168.0.200-220: Envoy Gateway, Samba).
+# Why a pod: on a single node the host NetBird agent can't route to an LB IP that the same node announces (a node
+# can't ARP-resolve its own announced IP). From a pod, Cilium treats LB IPs as service addresses and sends the
+# traffic straight to Envoy/Samba - no ARP involved. The host agent (scripts/70-netbird.sh) stays a plain peer for
+# SSH/kubectl and keeps working when Kubernetes is down. Details + NetBird console steps: docs/networking.md.
+#
+# ONE-TIME: put a reusable + ephemeral NetBird setup key (auto-group k8s-router) in Proton Pass as the password of
+# the login item homelab/netbird-router (see manifests/protonsecret-netbird-setup-key.yaml).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: netbird-router
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"   # after proton-secrets-operator (wave 3) installs the ProtonSecret CRD
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: netbird
+  source:
+    repoURL: https://github.com/chiragsoni81245/k8s-homelab.git # homelab-repo
+    targetRevision: main # homelab-revision
+    path: gitops/apps/platform/netbird-router/manifests
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true   # ProtonSecret CRD may not exist yet on the very first sync

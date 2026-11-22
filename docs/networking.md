@@ -23,17 +23,35 @@ one node answers ARP for that IP (leader election), so any LAN device can reach 
 with `HTTPRoute`s. Non-HTTP services get their own fixed IP from the pool instead: Samba is `192.168.0.201`
 (`workloads/samba/manifests/service-samba.yaml`).
 
-## NetBird (host-level)
-`scripts/70-netbird.sh` installs the agent on the node OS (works even if Kubernetes is down). In the NetBird console:
-make a node a **routing peer** for `192.168.0.0/24` (or just the LB range + node IPs), then restrict with ACL groups.
+## NetBird
+Two NetBird peers run on the node, with different jobs:
 
-Reaching LoadBalancer IPs (e.g. `192.168.0.200`) over NetBird:
-- Cilium is kept off `wt0` (`devices: "en+,eth+"` in the Cilium values). Auto-detected, Cilium's eBPF on `wt0` took LB-IP
-  traffic before NetBird's forward ACL (`sudo nft list table ip netbird`, chain `netbird-rt-fwd`) and it was silently lost.
-  Now the routing peer forwards it normally: NetBird policy -> masquerade -> LAN -> the node announcing the LB IP.
-- The routing peer must **not** be the node announcing the LB IP (a node can't ARP-resolve its own announced IP).
-  So L2 announcements are pinned to the Asus (`cilium/manifests/ciliuml2announcementpolicy-homelab.yaml`, `homelab/storage=media`) and the Dell is the routing
-  peer - don't make the Asus a routing peer for the LB IPs. Check the holder: `kubectl -n kube-system get lease | grep l2announce`.
+| Peer | Installed by | Job |
+|---|---|---|
+| host agent (node name) | `scripts/70-netbird.sh`, on the node OS | SSH / `kubectl` to the node over its NetBird IP; works even if Kubernetes is down. **Not** a routing peer. |
+| `k8s-router` (pod) | Argo app `platform/netbird-router` | routing peer for the LoadBalancer IPs (`.200` Envoy Gateway, `.201` Samba, ...) |
+
+Why the LB IPs need a pod: the node itself announces them (Cilium L2), and a node can't ARP-resolve an IP it announces,
+so the host agent can't forward to them. Inside a pod, Cilium treats an LB IP as a service address and hands the
+packet straight to Envoy/Samba - no ARP:
 ```
-laptop -WireGuard-> Dell wt0 -NetBird policy + masquerade-> enp5s0 -ARP .200-> Asus -Cilium-> Envoy (Asus)
+laptop -WireGuard-> k8s-router pod (wt0) -masquerade-> pod eth0 -Cilium service LB-> Envoy / Samba pod
 ```
+Cilium stays off the host's `wt0` (`devices: "en+,eth+"` in the Cilium values): with its eBPF on `wt0`, LB-IP traffic
+was taken before NetBird's forward ACL and silently lost.
+
+### NetBird console (once)
+1. **Groups**: `k8s-router` (the pod) and one for your own devices, e.g. `admins`.
+2. **Setup key** for the pod: reusable, **ephemeral**, auto-assigned group `k8s-router`. Ephemeral matters: the pod
+   keeps no state, so each restart registers a new peer and NetBird removes the old offline one after ~10 min.
+   Store the key in Proton Pass as the password of login item `homelab/netbird-router`; the `ProtonSecret` in
+   `netbird-router/manifests/` turns it into the Secret the pod reads.
+3. **Networks -> Add network** `homelab-lb`: resources `192.168.0.200/29` and `192.168.0.208/28` (covers the pool
+   `.200-.220`), routing peer **group** `k8s-router` (a group, not a single peer, so a replaced pod takes over by itself).
+4. **Access control**: policy `admins` -> `homelab-lb` resources (TCP 443/80 for the gateway, 445 for Samba, or all),
+   and `admins` -> the host agent for SSH.
+5. NetBird clients must resolve `*.chiragsoni.org` to `192.168.0.200`: Cloudflare records (see [TLS](tls.md)) or a
+   NetBird DNS zone.
+
+Check: `kubectl -n netbird logs deploy/netbird-router`, `kubectl -n netbird exec deploy/netbird-router -- netbird status -d`
+(`Networks:` lists the routes it serves); from a laptop on NetBird: `curl -sI https://jellyfin.chiragsoni.org/`.

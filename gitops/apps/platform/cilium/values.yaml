@@ -21,7 +21,7 @@ prometheus:
   enabled: true             # agent metrics on :9962, scraped by victoria-metrics/manifests/vmservicescrape-cilium-agent.yaml
   metricsService: true      # headless Service cilium-agent for the scrape
 operator:
-  replicas: 1               # 2 nodes only
+  replicas: 1               # single node (a 2nd replica needs a 2nd node: required anti-affinity)
   prometheus:
     enabled: true           # operator metrics on :9963 (chart default, spelled out)
     metricsService: true    # headless Service cilium-operator for the scrape

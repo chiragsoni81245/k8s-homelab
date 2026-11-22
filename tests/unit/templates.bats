@@ -14,7 +14,7 @@ yaml_docs() { python3 -c 'import sys,yaml; print(" ".join(d["kind"] for d in yam
 @test "kubeadm-init renders (with Secrets encryption)" {
   APISERVER_EXTRA="$(cat "$ROOT/templates/kubernetes/apiserver-encryption.yaml")"; export APISERVER_EXTRA
   out="$(render kubernetes/kubeadm-init.yaml)"
-  [ "$(yaml_docs <<<"$out")" = "InitConfiguration ClusterConfiguration" ]
+  [ "$(yaml_docs <<<"$out")" = "InitConfiguration ClusterConfiguration KubeletConfiguration" ]
   ! grep -q '\${' <<<"$out"
   grep -q 'encryption-provider-config' <<<"$out"
   grep -q 'controlPlaneEndpoint: "k8s-api.example.org:6443"' <<<"$out"
@@ -22,7 +22,7 @@ yaml_docs() { python3 -c 'import sys,yaml; print(" ".join(d["kind"] for d in yam
 @test "kubeadm-init renders without encryption and keeps the master schedulable" {
   APISERVER_EXTRA=""; export APISERVER_EXTRA
   out="$(render kubernetes/kubeadm-init.yaml)"
-  [ "$(yaml_docs <<<"$out")" = "InitConfiguration ClusterConfiguration" ]
+  [ "$(yaml_docs <<<"$out")" = "InitConfiguration ClusterConfiguration KubeletConfiguration" ]
   ! grep -q 'encryption-provider-config' <<<"$out"
   grep -q 'taints: \[\]' <<<"$out"
   grep -q 'addon/kube-proxy' <<<"$out"

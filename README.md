@@ -13,10 +13,10 @@ It asks **master or worker**, then:
 | server mode | Wi-Fi/Bluetooth off, lid/suspend ignored, console blanking, no auto-reboot |
 | host prep | swap off, kernel modules/sysctl, chrony, containerd (pinned), kubeadm/kubelet/kubectl (pinned, held) |
 | **master** | `kubeadm init` with `--control-plane-endpoint k8s-api.homelab.chiragsoni.org`, schedulable, Cilium (kube-proxy replacement, LB-IPAM + L2), Argo CD, root app-of-apps -> Envoy Gateway, local storage |
-| **worker** | optional `/DATA` mount (never formatted), asks master IP + token + CA hash, `kubeadm join`, node labels |
-| optional | NetBird agent (host-level), ufw |
+| **worker** | asks master IP + token + CA hash, `kubeadm join`, node labels |
+| optional (either role) | `/DATA` mount (existing partition, never formatted; needed only by the media apps), NetBird agent (host-level), ufw |
 
-Prompts you will see: role, node IP (confirm), hostname, control-plane endpoint, GitOps repo URL/branch, (ssh repo: deploy-key path), secrets encryption, NetBird setup key; worker: master IP, token, CA hash, `/DATA` partition.
+Prompts you will see: role, node IP (confirm), hostname, control-plane endpoint, GitOps repo URL/branch, (ssh repo: deploy-key path), secrets encryption, `/DATA` partition (either role), NetBird setup key; worker: master IP, token, CA hash.
 Answers are saved in the gitignored `config.env`. No secrets are stored in this repo.
 
 ## Layout
